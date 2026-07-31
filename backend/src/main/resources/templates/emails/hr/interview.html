@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layouts/base :: body(
+        emailTitle=#{email.interview.title},
+        templateContent=~{::content})}">
+<body>
+    <th:block th:fragment="content">
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Bonjour <strong style="color: #1a73e8;" th:text="${firstName}">Prénom</strong>,
+        </p>
+
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Un entretien a été programmé pour votre candidature.
+        </p>
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 6px; border-left: 4px solid #fbbc04; margin: 20px 0;">
+            <tr>
+                <td style="padding: 15px 20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td style="padding: 5px 0;">
+                                <p style="color: #333333; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                    <strong>Poste :</strong> <span th:text="${position}">Développeur Full-Stack</span>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;">
+                                <p style="color: #333333; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                    <strong>Date :</strong> <span th:text="${interviewDate}">15/01/2025</span>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;">
+                                <p style="color: #333333; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                    <strong>Heure :</strong> <span th:text="${interviewTime}">14:00</span>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;">
+                                <p style="color: #333333; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                    <strong>Type :</strong> <span th:text="${interviewType}">Visioconférence</span>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;">
+                                <p style="color: #333333; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                    <strong>Intervieweur :</strong> <span th:text="${interviewerName}">Jean Dupont</span>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <th:block th:if="${meetingLink}" th:include="~{emails/shared/button :: button(
+            link=${meetingLink},
+            label=#{email.interview.action})}" />
+
+        <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 20px 0 0 0; font-family: Arial, Helvetica, sans-serif;" th:if="${notificationMessage}" th:text="${notificationMessage}">
+            Message optionnel de l'intervieweur...
+        </p>
+    </th:block>
+</body>
+</html>

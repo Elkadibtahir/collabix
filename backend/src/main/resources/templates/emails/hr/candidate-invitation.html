@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layouts/base :: body(
+        emailTitle=#{email.candidateInvitation.title},
+        templateContent=~{::content})}">
+<body>
+    <th:block th:fragment="content">
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Bonjour <strong style="color: #1a73e8;" th:text="${firstName}">Prénom</strong>,
+        </p>
+
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Nous avons le plaisir de vous inviter à rejoindre la plateforme Collabix
+            dans le cadre de votre processus de candidature.
+        </p>
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 6px; margin: 20px 0;">
+            <tr>
+                <td style="padding: 15px 20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td style="padding: 5px 0;">
+                                <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                    <strong>Poste :</strong> <span th:text="${position}">Développeur Full-Stack</span>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;">
+                                <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                    <strong>Département :</strong> <span th:text="${departmentName}">Engineering</span>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;">
+                                <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                    <strong>Espace de travail :</strong> <span th:text="${workspaceName}">Collabix</span>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <th:block th:include="~{emails/shared/button :: button(
+            link=${invitationLink},
+            label=#{email.candidateInvitation.action})}" />
+
+        <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 20px 0 0 0; font-family: Arial, Helvetica, sans-serif;">
+            Si vous avez des questions, n'hésitez pas à contacter notre équipe recrutement.
+        </p>
+    </th:block>
+</body>
+</html>

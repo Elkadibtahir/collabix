@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layouts/base :: body(
+        emailTitle=#{email.accountCreated.title},
+        templateContent=~{::content})}">
+<body>
+    <th:block th:fragment="content">
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Bonjour <strong style="color: #1a73e8;" th:text="${firstName}">Prénom</strong>,
+        </p>
+
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Votre compte Collabix a été créé avec succès. Vous pouvez dès à présent
+            vous connecter à la plateforme en utilisant l'adresse email
+            <strong th:text="${email}">email@exemple.com</strong>.
+        </p>
+
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            <strong>Espace de travail :</strong>
+            <span th:text="${workspaceName}">Mon Espace</span>
+        </p>
+
+        <th:block th:include="~{emails/shared/button :: button(
+            link=${loginLink},
+            label=#{email.accountCreated.button})}" />
+
+        <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 20px 0 0 0; font-family: Arial, Helvetica, sans-serif;">
+            Si vous avez des questions, n'hésitez pas à contacter notre équipe support.
+        </p>
+    </th:block>
+</body>
+</html>
+

@@ -1,0 +1,36 @@
+package com.trio.backend.dto.user;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserHistorySearchCriteria {
+
+    private UUID userId;
+
+    private List<String> actions;
+
+    private String action;
+
+    private UUID performedBy;
+
+    private UUID departmentId;
+
+    private Instant createdAfter;
+
+    private Instant createdBefore;
+
+    private String keyword;
+
+}

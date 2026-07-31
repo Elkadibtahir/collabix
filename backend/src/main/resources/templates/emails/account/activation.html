@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layouts/base :: body(
+        emailTitle=#{email.activation.title},
+        templateContent=~{::content})}">
+<body>
+    <th:block th:fragment="content">
+
+        <!-- ================================================= -->
+        <!-- GREETING                                           -->
+        <!-- ================================================= -->
+        <p style="color: #333333; font-size: 16px; line-height: 1.7; margin: 0 0 24px 0; font-family: 'Inter', Arial, Helvetica, sans-serif;">
+            Bonjour <strong style="color: #2563EB; font-weight: 600;" th:text="${firstName}">Prénom</strong>,
+        </p>
+
+        <!-- ================================================= -->
+        <!-- INTRO                                              -->
+        <!-- ================================================= -->
+        <p style="color: #333333; font-size: 16px; line-height: 1.7; margin: 0 0 16px 0; font-family: 'Inter', Arial, Helvetica, sans-serif;">
+            Un administrateur vient de créer votre compte sur la plateforme
+            <strong style="color: #0f172a; font-weight: 600;">Collabix</strong>.
+            Pour finaliser la création de votre compte et accéder à votre espace de travail,
+            veuillez cliquer sur le bouton ci-dessous pour l'activer.
+        </p>
+
+        <!-- ================================================= -->
+        <!-- CONTEXT INFO                                       -->
+        <!-- ================================================= -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; margin: 24px 0;">
+            <tr>
+                <td style="padding: 16px 20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td style="padding: 4px 0;">
+                                <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0; font-family: 'Inter', Arial, Helvetica, sans-serif;">
+                                    <strong style="color: #0f172a; font-weight: 600;">Espace de travail :</strong>
+                                    <span th:text="${workspaceName}">Mon Espace</span>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 0;">
+                                <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0; font-family: 'Inter', Arial, Helvetica, sans-serif;">
+                                    <strong style="color: #0f172a; font-weight: 600;">Département :</strong>
+                                    <span th:text="${departmentName}">Mon Département</span>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 4px 0;">
+                                <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0; font-family: 'Inter', Arial, Helvetica, sans-serif;">
+                                    <strong style="color: #0f172a; font-weight: 600;">Email :</strong>
+                                    <span th:text="${email}">utilisateur@exemple.com</span>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <!-- ================================================= -->
+        <!-- ACTIVATION BUTTON                                  -->
+        <!-- ================================================= -->
+        <th:block th:include="~{emails/shared/button :: button(
+            link=${activationLink},
+            label=#{email.activation.button})}" />
+
+        <!-- ================================================= -->
+        <!-- RAW LINK FALLBACK                                  -->
+        <!-- ================================================= -->
+        <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 8px 0; font-family: 'Inter', Arial, Helvetica, sans-serif;">
+            Si le bouton ne fonctionne pas, copiez et collez le lien suivant dans votre navigateur :
+        </p>
+        <p style="color: #2563EB; font-size: 13px; line-height: 1.6; word-break: break-all; margin: 0 0 24px 0; font-family: 'Inter', Arial, Helvetica, sans-serif;">
+            <a th:href="${activationLink}" th:text="${activationLink}"
+               target="_blank"
+               style="color: #2563EB; word-break: break-all; text-decoration: underline; text-underline-offset: 2px;">https://collabix.app/activate?token=...</a>
+        </p>
+
+        <!-- ================================================= -->
+        <!-- DIVIDER                                            -->
+        <!-- ================================================= -->
+        <th:block th:include="~{emails/shared/divider :: divider}" />
+
+        <!-- ================================================= -->
+        <!-- EXPIRATION NOTICE                                  -->
+        <!-- ================================================= -->
+        <p style="color: #64748b; font-size: 13px; line-height: 1.6; margin: 0 0 16px 0; font-family: 'Inter', Arial, Helvetica, sans-serif;">
+            <strong style="color: #0f172a;">Expiration :</strong> Ce lien d'activation expire dans
+            <strong style="color: #F59E0B;" th:text="${expirationHours}">24</strong> heures.
+            Passé ce délai, vous devrez demander un nouveau lien.
+        </p>
+
+        <!-- ================================================= -->
+        <!-- SECURITY WARNING                                   -->
+        <!-- ================================================= -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #fef2f2; border-radius: 8px; border: 1px solid #fecaca; margin: 20px 0 0 0;">
+            <tr>
+                <td style="padding: 14px 20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td width="24" valign="top" style="padding: 0 12px 0 0;">
+                                <span style="color: #EF4444; font-size: 18px; line-height: 1;">&#9888;</span>
+                            </td>
+                            <td valign="top">
+                                <p style="color: #991b1b; font-size: 13px; line-height: 1.6; margin: 0; font-family: 'Inter', Arial, Helvetica, sans-serif;">
+                                    <strong style="font-weight: 600;">Vous n'avez pas demandé la création de ce compte ?</strong>
+                                    Si vous n'êtes pas à l'origine de cette inscription, veuillez ignorer cet email
+                                    ou contacter notre équipe support à
+                                    <a th:href="'mailto:' + ${supportEmail}" th:text="${supportEmail}"
+                                       style="color: #991b1b; text-decoration: underline; font-weight: 500;">support@collabix.app</a>
+                                    pour signaler une activité suspecte.
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+    </th:block>
+</body>
+</html>

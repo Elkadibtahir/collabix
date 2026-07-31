@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layouts/base :: body(
+        emailTitle=#{email.accountActivated.title},
+        templateContent=~{::content})}">
+<body>
+    <th:block th:fragment="content">
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Bonjour <strong style="color: #1a73e8;" th:text="${firstName}">Prénom</strong>,
+        </p>
+
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Félicitations ! Votre compte Collabix est désormais activé. Vous pouvez
+            accéder à toutes les fonctionnalités de la plateforme.
+        </p>
+
+        <th:block th:include="~{emails/shared/button :: button(
+            link=${loginLink},
+            label=#{email.accountActivated.button})}" />
+
+        <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 20px 0 0 0; font-family: Arial, Helvetica, sans-serif;">
+            Pour des raisons de sécurité, nous vous recommandons de modifier votre
+            mot de passe lors de votre première connexion.
+        </p>
+    </th:block>
+</body>
+</html>
+

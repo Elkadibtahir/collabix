@@ -1,6 +1,5 @@
 package com.trio.backend.entity;
 
-import com.trio.backend.entity.base.AuditableEntity;
 import com.trio.backend.entity.ids.RolePermissionId;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,11 +11,10 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RolePermission extends AuditableEntity {
+public class RolePermission {
 
     @EmbeddedId
     private RolePermissionId id;
-
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("roleId")

@@ -1,0 +1,12 @@
+package com.trio.backend.enums;
+
+public enum AuditType {
+    ACCESS_CONTROL,
+    NETWORK_SECURITY,
+    APPLICATION_SECURITY,
+    INFRASTRUCTURE,
+    COMPLIANCE,
+    DATA_PROTECTION,
+    IDENTITY_MANAGEMENT,
+    GENERAL
+}

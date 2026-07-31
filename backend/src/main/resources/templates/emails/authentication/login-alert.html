@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layouts/base :: body(
+        emailTitle=#{email.loginAlert.title},
+        templateContent=~{::content})}">
+<body>
+    <th:block th:fragment="content">
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Bonjour <strong style="color: #1a73e8;" th:text="${firstName}">Prénom</strong>,
+        </p>
+
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Une nouvelle connexion à votre compte Collabix a été détectée.
+        </p>
+
+        <th:block th:include="~{emails/shared/divider :: divider}" />
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+                <td style="padding: 5px 0;">
+                    <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                        <strong>Date :</strong>
+                        <span th:text="${#temporals.format(#dates.createNow(), 'dd/MM/yyyy HH:mm')}">01/01/2025 12:00</span>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 5px 0;">
+                    <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                        <strong>Adresse IP :</strong> <span th:text="${ipAddress}">192.168.1.1</span>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 5px 0;">
+                    <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                        <strong>Navigateur :</strong> <span th:text="${userAgent}">Chrome/120.0</span>
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 5px 0;">
+                    <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                        <strong>Localisation :</strong> <span th:text="${location}">Paris, France</span>
+                    </p>
+                </td>
+            </tr>
+        </table>
+
+        <th:block th:include="~{emails/shared/divider :: divider}" />
+
+        <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 20px 0 0 0; font-family: Arial, Helvetica, sans-serif;">
+            Si cette connexion n'est pas la vôtre, veuillez immédiatement
+            <a th:href="${resetLink}"
+               style="color: #1a73e8; text-decoration: underline; font-weight: 500;">réinitialiser votre mot de passe</a>.
+        </p>
+    </th:block>
+</body>
+</html>
+

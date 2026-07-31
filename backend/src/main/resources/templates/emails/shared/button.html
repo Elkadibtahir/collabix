@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <!-- ================================================= -->
+    <!-- CTA BUTTON FRAGMENT                                -->
+    <!-- Usage:                                            -->
+    <!--   th:include="~{emails/shared/button :: button(   -->
+    <!--     link=${someLink},                             -->
+    <!--     label='Mon Bouton',                            -->
+    <!--     color='#2563EB')}"                            -->
+    <!-- Colors: primary=#2563EB, success=#22C55E,         -->
+    <!--         warning=#F59E0B, danger=#EF4444           -->
+    <!-- ================================================= -->
+    <th:block th:fragment="button(link, label, color)">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 32px 0;">
+            <tr>
+                <td align="center">
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="border-radius: 8px;">
+                        <tr>
+                            <td align="center" style="border-radius: 8px;" th:style="'background-color: ' + (${color} ?: '#2563EB') + '; border-radius: 8px;'">
+                                <a th:href="${link}"
+                                   target="_blank"
+                                   th:text="${label}"
+                                   style="display: inline-block; padding: 14px 36px; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; font-family: 'Inter', Arial, Helvetica, sans-serif; border-radius: 8px; letter-spacing: 0.3px; mso-hide: none; background-color: #2563EB;"
+                                   th:style="'display: inline-block; padding: 14px 36px; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 600; font-family: \'Inter\', Arial, Helvetica, sans-serif; border-radius: 8px; letter-spacing: 0.3px; mso-hide: none; background-color: ' + (${color} ?: '#2563EB') + ';'">
+                                    Bouton
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </th:block>
+</body>
+</html>

@@ -27,8 +27,7 @@ public class Role extends AuditableEntity {
     @OneToMany(
             mappedBy = "role",
             fetch = FetchType.LAZY,
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE}
     )
     @Builder.Default
     private Set<RolePermission> rolePermissions = new HashSet<>();

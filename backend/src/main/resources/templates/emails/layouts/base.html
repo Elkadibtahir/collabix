@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+    <title th:text="${emailTitle}">Collabix</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Inter', Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f1f5f9; min-width: 100%;">
+        <tr>
+            <td align="center" style="padding: 40px 16px;">
+
+                <!-- ================================================= -->
+                <!-- CARD CONTAINER                                     -->
+                <!-- ================================================= -->
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+
+                    <!-- HEADER -->
+                    <th:block th:include="emails/layouts/header :: header" />
+
+                    <!-- BODY -->
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 0 40px 40px 40px; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
+                            <th:block th:include="${templateContent}" />
+                        </td>
+                    </tr>
+
+                    <!-- DIVIDER before footer -->
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 0 40px; border-left: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="border-bottom: 1px solid #e2e8f0; height: 1px; line-height: 1px;">&nbsp;</td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- FOOTER -->
+                    <th:block th:include="emails/layouts/footer :: footer" />
+
+                </table>
+
+                <!-- ================================================= -->
+                <!-- PREHEADER SPACER                                   -->
+                <!-- ================================================= -->
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+                    <tr>
+                        <td style="padding-top: 20px; text-align: center;">
+                            <p style="color: #94a3b8; font-size: 11px; line-height: 1.5; margin: 0; font-family: 'Inter', Arial, Helvetica, sans-serif;">
+                                Collabix &mdash; Collaboration simplifiée pour votre équipe
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

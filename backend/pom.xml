@@ -40,11 +40,19 @@
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
+        <lombok.version>1.18.46</lombok.version>
+
         <mapstruct.version>1.6.3</mapstruct.version>
 
         <jjwt.version>0.12.7</jjwt.version>
 
         <springdoc.version>2.8.9</springdoc.version>
+
+        <poi.version>5.3.0</poi.version>
+
+        <commons-csv.version>1.11.0</commons-csv.version>
+
+        <openpdf.version>1.4.1</openpdf.version>
 
     </properties>
 
@@ -88,6 +96,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
         <!-- ===================== -->
@@ -180,6 +193,63 @@
         </dependency>
 
         <!-- ===================== -->
+        <!-- Spring Cache -->
+        <!-- ===================== -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
+        <!-- ===================== -->
+        <!-- Caffeine (Cache Implementation) -->
+        <!-- ===================== -->
+
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+
+        <!-- ===================== -->
+        <!-- Spring Mail -->
+        <!-- ===================== -->
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <!-- ===================== -->
+        <!-- Export - Apache POI -->
+        <!-- ===================== -->
+
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>${poi.version}</version>
+        </dependency>
+
+        <!-- ===================== -->
+        <!-- Export - Commons CSV -->
+        <!-- ===================== -->
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>${commons-csv.version}</version>
+        </dependency>
+
+        <!-- ===================== -->
+        <!-- Export - OpenPDF -->
+        <!-- ===================== -->
+
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>${openpdf.version}</version>
+        </dependency>
+
+        <!-- ===================== -->
         <!-- Testing -->
         <!-- ===================== -->
 
@@ -193,6 +263,22 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- ===================== -->
+        <!-- Rate Limiting (Bucket4j) -->
+        <!-- ===================== -->
+
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>8.10.1</version>
         </dependency>
 
     </dependencies>
@@ -249,6 +335,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
                         </path>
 
                         <path>

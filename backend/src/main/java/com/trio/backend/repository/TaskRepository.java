@@ -1,0 +1,113 @@
+package com.trio.backend.repository;
+
+import com.trio.backend.entity.Task;
+import com.trio.backend.enums.TaskStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface TaskRepository extends JpaRepository<Task, UUID> {
+
+    List<Task> findAllByProject_IdAndStatus(UUID projectId, TaskStatus status);
+
+    Page<Task> findAllByProject_IdAndStatus(UUID projectId, TaskStatus status, Pageable pageable);
+
+    @Query("select t from Task t where t.id = :taskId and t.project.id = :projectId")
+    Optional<Task> findByIdAndProject_Id(@Param("taskId") UUID taskId, @Param("projectId") UUID projectId);
+
+    boolean existsByProject_IdAndTitle(UUID projectId, String title);
+
+    boolean existsByIdAndProject_IdAndStatus(UUID taskId, UUID projectId, TaskStatus status);
+
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId " +
+            "AND (:search IS NULL OR LOWER(t.title) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "AND (:status IS NULL OR t.status = :status) " +
+            "AND (:priority IS NULL OR t.priority = :priority) " +
+            "AND (:assigneeId IS NULL OR t.assignee.id = :assigneeId) " +
+            "ORDER BY t.updatedAt DESC")
+    Page<Task> findFiltered(@Param("projectId") UUID projectId,
+                            @Param("search") String search,
+                            @Param("status") String status,
+                            @Param("priority") String priority,
+                            @Param("assigneeId") UUID assigneeId,
+                            Pageable pageable);
+
+    long countByProject_IdAndStatus(UUID projectId, TaskStatus status);
+
+    @Query("SELECT t.project.id, COUNT(t) FROM Task t WHERE t.project.id IN :projectIds AND t.status = :status GROUP BY t.project.id")
+    List<Object[]> countByProjectIdsAndStatus(@Param("projectIds") List<UUID> projectIds, @Param("status") TaskStatus status);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.id = :projectId AND t.status = :status AND t.updatedAt >= :from AND t.updatedAt <= :to")
+    long countByProjectIdAndStatusAndUpdatedAtBetween(
+            @Param("projectId") UUID projectId,
+            @Param("status") TaskStatus status,
+            @Param("from") Instant from,
+            @Param("to") Instant to
+    );
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.workspace.id = :workspaceId AND t.status = :status")
+    long countByWorkspaceIdAndStatus(@Param("workspaceId") UUID workspaceId, @Param("status") TaskStatus status);
+
+    @Query("SELECT t FROM Task t WHERE t.project.department.workspace.id = :workspaceId AND t.status = :status")
+    Page<Task> findAllByWorkspaceIdAndStatus(@Param("workspaceId") UUID workspaceId, @Param("status") TaskStatus status, Pageable pageable);
+
+    @Query("SELECT t FROM Task t WHERE t.project.department.workspace.id = :workspaceId AND t.status = :status")
+    List<Task> findAllByWorkspaceIdAndStatus(@Param("workspaceId") UUID workspaceId, @Param("status") TaskStatus status);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.workspace.id = :workspaceId AND t.dueAt IS NOT NULL AND t.dueAt < :now AND t.status = :status")
+    long countOverdueByWorkspaceId(@Param("workspaceId") UUID workspaceId, @Param("now") Instant now, @Param("status") TaskStatus status);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.workspace.id = :workspaceId AND t.dueAt IS NOT NULL AND t.dueAt >= :startOfDay AND t.dueAt <= :endOfDay AND t.status = :status")
+    long countDueTodayByWorkspaceId(@Param("workspaceId") UUID workspaceId, @Param("startOfDay") Instant startOfDay, @Param("endOfDay") Instant endOfDay, @Param("status") TaskStatus status);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.workspace.id = :workspaceId AND t.dueAt IS NOT NULL AND t.dueAt >= :startOfWeek AND t.dueAt <= :endOfWeek AND t.status = :status")
+    long countDueThisWeekByWorkspaceId(@Param("workspaceId") UUID workspaceId, @Param("startOfWeek") Instant startOfWeek, @Param("endOfWeek") Instant endOfWeek, @Param("status") TaskStatus status);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.id = :projectId AND t.dueAt IS NOT NULL AND t.dueAt < :now AND t.status = :status")
+    long countOverdueByProjectId(@Param("projectId") UUID projectId, @Param("now") Instant now, @Param("status") TaskStatus status);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.id = :departmentId AND t.dueAt IS NOT NULL AND t.dueAt < :now AND t.status = :status")
+    long countOverdueByDepartmentId(@Param("departmentId") UUID departmentId, @Param("now") Instant now, @Param("status") TaskStatus status);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.id = :departmentId AND t.dueAt IS NOT NULL AND t.dueAt >= :startOfDay AND t.dueAt <= :endOfDay AND t.status = :status")
+    long countDueTodayByDepartmentId(@Param("departmentId") UUID departmentId, @Param("startOfDay") Instant startOfDay, @Param("endOfDay") Instant endOfDay, @Param("status") TaskStatus status);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.id = :departmentId AND t.dueAt IS NOT NULL AND t.dueAt >= :startOfWeek AND t.dueAt <= :endOfWeek AND t.status = :status")
+    long countDueThisWeekByDepartmentId(@Param("departmentId") UUID departmentId, @Param("startOfWeek") Instant startOfWeek, @Param("endOfWeek") Instant endOfWeek, @Param("status") TaskStatus status);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.id = :departmentId AND t.status = :status")
+    long countByDepartmentIdAndStatus(@Param("departmentId") UUID departmentId, @Param("status") TaskStatus status);
+
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.status = :status")
+    List<Task> findAllByProjectIdAndStatus(@Param("projectId") UUID projectId, @Param("status") TaskStatus status);
+
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.status = :status ORDER BY t.updatedAt DESC")
+    List<Task> findLatestByProjectIdAndStatus(@Param("projectId") UUID projectId, @Param("status") TaskStatus status, Pageable pageable);
+
+    @Query("SELECT t FROM Task t JOIN FETCH t.project WHERE t.createdBy = :userId AND t.project.department.workspace.id = :workspaceId AND t.status = :status ORDER BY t.updatedAt DESC")
+    List<Task> findLatestByCreatedByAndWorkspaceIdAndStatus(@Param("userId") UUID userId, @Param("workspaceId") UUID workspaceId, @Param("status") TaskStatus status, Pageable pageable);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.createdBy = :userId AND t.project.department.workspace.id = :workspaceId AND t.dueAt IS NOT NULL AND t.dueAt < :now AND t.status = :status")
+    long countOverdueByCreatedByAndWorkspaceId(@Param("userId") UUID userId, @Param("workspaceId") UUID workspaceId, @Param("now") Instant now, @Param("status") TaskStatus status);
+
+    long countBySprint_Id(UUID sprintId);
+    long countBySprint_IdAndStatus(UUID sprintId, TaskStatus status);
+
+    @Query("SELECT COALESCE(SUM(t.storyPoints), 0) FROM Task t WHERE t.sprint.id = :sprintId")
+    int sumStoryPointsBySprint_Id(@Param("sprintId") UUID sprintId);
+
+    @Query("SELECT COALESCE(SUM(t.storyPoints), 0) FROM Task t WHERE t.sprint.id = :sprintId AND t.status = :status")
+    int sumStoryPointsBySprint_IdAndStatus(@Param("sprintId") UUID sprintId, @Param("status") TaskStatus status);
+
+    long countBySecurityAudit_Id(UUID securityAuditId);
+    long countBySecurityAudit_IdAndStatus(UUID securityAuditId, TaskStatus status);
+    long countByMarketingCampaign_Id(UUID marketingCampaignId);
+    long countByMarketingCampaign_IdAndStatus(UUID marketingCampaignId, TaskStatus status);
+}

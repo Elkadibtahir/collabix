@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{emails/layouts/base :: body(
+        emailTitle=#{email.atsNotification.title},
+        templateContent=~{::content})}">
+<body>
+    <th:block th:fragment="content">
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Bonjour <strong style="color: #1a73e8;" th:text="${firstName}">Prénom</strong>,
+        </p>
+
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;">
+            Une nouvelle activité a été enregistrée dans le système ATS pour le poste
+            de <strong th:text="${position}">Développeur</strong>.
+        </p>
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa; border-radius: 6px; margin: 20px 0;">
+            <tr>
+                <td style="padding: 15px 20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td style="padding: 5px 0;">
+                                <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                    <strong>Candidat :</strong> <span th:text="${candidateName}">Jean Dupont</span>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;">
+                                <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                    <strong>Étape :</strong> <span th:text="${recruitmentStage}">Entretien technique</span>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;">
+                                <p style="color: #666666; font-size: 14px; line-height: 1.5; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+                                    <strong>Responsable :</strong> <span th:text="${recruiterName}">Marie Martin</span>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0; font-family: Arial, Helvetica, sans-serif;" th:text="${notificationMessage}">
+            Détails de la notification ATS...
+        </p>
+
+        <th:block th:if="${actionLink}" th:include="~{emails/shared/button :: button(
+            link=${actionLink},
+            label=#{email.atsNotification.action})}" />
+    </th:block>
+</body>
+</html>
