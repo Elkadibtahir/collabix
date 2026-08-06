@@ -25,21 +25,22 @@ public class TaskMetricsBuilder {
         Instant now = Instant.now();
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
 
-        long activeCount = taskRepository.countByWorkspaceIdAndStatus(workspaceId, TaskStatus.ACTIVE);
+        long activeCount = taskRepository.countActiveByWorkspaceId(workspaceId);
         long archivedCount = taskRepository.countByWorkspaceIdAndStatus(workspaceId, TaskStatus.ARCHIVED);
-        long overdueCount = taskRepository.countOverdueByWorkspaceId(workspaceId, now, TaskStatus.ACTIVE);
+        long overdueCount = taskRepository.countOverdueByWorkspaceId(workspaceId, now);
 
         Instant startOfDay = today.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant endOfDay = today.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant();
-        long dueTodayCount = taskRepository.countDueTodayByWorkspaceId(workspaceId, startOfDay, endOfDay, TaskStatus.ACTIVE);
+        long dueTodayCount = taskRepository.countDueTodayByWorkspaceId(workspaceId, startOfDay, endOfDay);
 
         LocalDate startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
         Instant startOfWeekInst = startOfWeek.atStartOfDay(ZoneOffset.UTC).toInstant();
         Instant endOfWeekInst = startOfWeek.plusWeeks(1).atStartOfDay(ZoneOffset.UTC).toInstant();
-        long dueThisWeekCount = taskRepository.countDueThisWeekByWorkspaceId(workspaceId, startOfWeekInst, endOfWeekInst, TaskStatus.ACTIVE);
+        long dueThisWeekCount = taskRepository.countDueThisWeekByWorkspaceId(workspaceId, startOfWeekInst, endOfWeekInst);
 
-        long total = activeCount + archivedCount;
-        double completionRate = total > 0 ? (double) archivedCount / total * 100.0 : 0.0;
+        long completedCount = taskRepository.countByWorkspaceIdAndStatus(workspaceId, TaskStatus.COMPLETED);
+        long total = activeCount + completedCount + archivedCount;
+        double completionRate = total > 0 ? (double) (completedCount + archivedCount) / total * 100.0 : 0.0;
         double velocity = 0.0;
 
         return TaskMetrics.builder()

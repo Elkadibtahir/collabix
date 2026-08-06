@@ -1,4 +1,4 @@
-import { BookMarked, FileText, ScrollText, Heart, Search, Sparkles } from 'lucide-react';
+import { BookMarked, FileText, ScrollText, Heart, Search } from 'lucide-react';
 import { AIEmptyState } from '../AIEmptyState';
 
 interface HistoryEmptyStateProps {

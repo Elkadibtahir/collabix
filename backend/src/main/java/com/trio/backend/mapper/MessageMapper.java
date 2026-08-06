@@ -41,6 +41,7 @@ public interface MessageMapper {
     @Mapping(target = "fileSize", ignore = true)
     @Mapping(target = "mimeType", ignore = true)
     @Mapping(target = "mentions", ignore = true)
+    @Mapping(target = "pinned", source = "isPinned")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "createdAt", ignore = true)

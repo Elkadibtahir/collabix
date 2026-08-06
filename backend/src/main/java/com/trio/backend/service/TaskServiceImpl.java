@@ -62,7 +62,7 @@ public class TaskServiceImpl implements TaskService {
 
         Task task = taskMapper.toEntity(request);
         task.setProject(project);
-        task.setStatus(TaskStatus.TODO);
+        task.setStatus(TaskStatus.ACTIVE);
 
         if (request.getDueAt() != null) {
             task.setDueAt(request.getDueAt());
@@ -234,7 +234,7 @@ public class TaskServiceImpl implements TaskService {
             throw new BadRequestException("Task is not archived.");
         }
 
-        task.setStatus(TaskStatus.TODO);
+        task.setStatus(TaskStatus.ACTIVE);
         Task saved = taskRepository.save(task);
         logActivity(saved, userId, "restored this task.");
         return taskMapper.toResponse(saved);

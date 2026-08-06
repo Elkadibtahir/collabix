@@ -1,6 +1,5 @@
 import { BookMarked, Clock, Star, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '../../../lib/cn';
 import { IconButton } from '../../ui/IconButton';
 
 interface PromptHeaderProps {

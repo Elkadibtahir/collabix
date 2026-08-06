@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { X, Play, Sparkles } from 'lucide-react';
-import { cn } from '../../../lib/cn';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { promptCategories, type Prompt } from './PromptTypes';

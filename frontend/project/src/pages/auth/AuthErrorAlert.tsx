@@ -1,4 +1,4 @@
-import { AlertTriangle, AlertCircle, Info, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
 export type AuthErrorTone = 'error' | 'warning' | 'info';

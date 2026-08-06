@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/ui/Toast';
 import {
   AlertCircle,
-  RefreshCw,
   Network,
   Plus,
   Search,
@@ -16,7 +15,6 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { PageLoader } from '../components/ui/PageLoader';
-import { Skeleton } from '../components/ui/Skeleton';
 import { Can } from '../pages/auth';
 import { cn } from '../lib/cn';
 import { useWorkspaceId } from '../hooks/useWorkspaceId';

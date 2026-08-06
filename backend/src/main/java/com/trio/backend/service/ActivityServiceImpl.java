@@ -59,7 +59,7 @@ public class ActivityServiceImpl implements ActivityService {
         Task task = taskRepository.findByIdAndProject_Id(taskId, projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found."));
 
-        if (task.getStatus() != TaskStatus.ACTIVE) {
+        if (task.getStatus().isTerminal()) {
             throw new ResourceNotFoundException("Task not found.");
         }
 
@@ -130,7 +130,7 @@ public class ActivityServiceImpl implements ActivityService {
         Task task = taskRepository.findByIdAndProject_Id(taskId, projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found."));
 
-        if (task.getStatus() != TaskStatus.ACTIVE) {
+        if (task.getStatus().isTerminal()) {
             throw new ResourceNotFoundException("Task not found.");
         }
 

@@ -339,6 +339,11 @@ public class Notification extends AuditableEntity {
         CAMPAIGN_COMPLETED,
         CAMPAIGN_ARCHIVED,
         NEW_MESSAGE,
-        CHANNEL_INVITE
+        CHANNEL_INVITE,
+        HANDOVER_SENT,
+        HANDOVER_ACCEPTED,
+        HANDOVER_REJECTED,
+        HANDOVER_COMPLETED,
+        HANDOVER_COMMENTED
     }
 }

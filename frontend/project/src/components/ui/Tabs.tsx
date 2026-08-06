@@ -9,25 +9,40 @@ export interface TabItem {
 }
 
 export interface TabsProps {
-  items: TabItem[];
+  items?: TabItem[];
+  tabs?: TabItem[];
   active?: string;
-  onChange: (id: string) => void;
+  activeTab?: string;
+  onChange?: (id: string) => void;
+  onTabChange?: (id: string) => void;
   className?: string;
   size?: 'sm' | 'md';
 }
 
-export function Tabs({ items, active = items[0]?.id, onChange, className, size = 'md' }: TabsProps) {
+export function Tabs({
+  items,
+  tabs,
+  active,
+  activeTab,
+  onChange,
+  onTabChange,
+  className,
+  size = 'md',
+}: TabsProps) {
+  const tabsList = items ?? tabs ?? [];
+  const selected = active ?? activeTab ?? tabsList[0]?.id;
+  const changeHandler = onChange ?? onTabChange ?? (() => undefined);
   return (
     <div role="tablist" className={cn('flex items-center gap-1 border-b border-border-subtle', className)}>
-      {items.map((item) => {
-        const isActive = item.id === active;
+      {tabsList.map((item) => {
+        const isActive = item.id === selected;
         return (
           <button
             key={item.id}
             type="button"
             role="tab"
             aria-selected={isActive}
-            onClick={() => onChange(item.id)}
+            onClick={() => changeHandler(item.id)}
             className={cn(
               'relative inline-flex items-center gap-2 font-medium transition-colors duration-150 ease-cx',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas rounded-t-md',

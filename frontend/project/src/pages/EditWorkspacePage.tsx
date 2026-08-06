@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Briefcase, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Briefcase, Loader2, AlertCircle } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';

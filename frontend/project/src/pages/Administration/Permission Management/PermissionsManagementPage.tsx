@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Search, Shield, X, Info, Check, X as XIcon } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Shield, Info, Check, X as XIcon } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
@@ -8,7 +8,7 @@ import { EmptyState } from '../../../components/ui/EmptyState';
 import { Modal } from '../../../components/ui/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { usePermissionsList, useRolesList } from '../../../services/admin-hooks';
-import type { PermissionResponse, RoleResponse } from '../../../types';
+import type { PermissionResponse } from '../../../types';
 
 export function PermissionsManagementPage() {
   const [search, setSearch] = useState('');
@@ -179,13 +179,7 @@ export function PermissionsManagementPage() {
           </CardBody>
         </Card>
       )}
-            <div className="flex items-center gap-2 mt-4 pt-3 border-t border-border-subtle text-caption text-text-tertiary">
-              <Info className="h-3.5 w-3.5" />
-              Permission assignments are managed through role configuration on the backend
-            </div>
-          </CardBody>
-        </Card>
-      )}
+      
 
       <PermissionDetailsModal
         permission={selectedPermission}

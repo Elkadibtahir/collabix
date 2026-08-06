@@ -9,18 +9,16 @@ import {
   Table as TableIcon,
   File as FileIcon,
   Printer,
-  CheckCircle2,
   Clock,
-  AlertCircle,
   MoreHorizontal,
   Search,
-  Filter,
   ChevronDown,
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { Badge } from '../../../components/ui/Badge';
+import { Badge, type Tone } from '../../../components/ui/Badge';
+import type { ReportExport } from './report-types';
 import { IconButton } from '../../../components/ui/IconButton';
 import { Dropdown, type DropdownItem } from '../../../components/ui/Dropdown';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -31,7 +29,7 @@ export function ExportCenterPage({ onBack }: { onBack?: () => void }) {
   const [search, setSearch] = useState('');
   const [filterFormat, setFilterFormat] = useState<string>();
 
-  const exports: { id: string; reportName: string; format: 'pdf' | 'excel' | 'csv'; fileSize: number; generatedAt: string; generatedBy: string; status: 'success' | 'pending' | 'failed'; downloadUrl: string | undefined }[] = [];
+  const exports: ReportExport[] = [];
 
   const filteredExports = exports.filter((exp) => {
     const matchesSearch =
@@ -148,7 +146,7 @@ function StatCard({
 }: {
   label: string;
   value: string | number;
-  tone: string;
+  tone: 'accent' | 'success' | 'warning' | 'info';
 }) {
   const bgColor = {
     accent: 'bg-accent-50 dark:bg-accent-100 text-accent-700 dark:text-accent-200',
@@ -165,7 +163,8 @@ function StatCard({
   );
 }
 
-function ExportCard({ export: exp }: { export: any }) {
+function ExportCard({ export: exp }: { export: ReportExport }) {
+  const { toast } = useToast();
   const formatIcon: Record<string, React.ReactNode> = {
     pdf: <FileText className="h-5 w-5" />,
     csv: <TableIcon className="h-5 w-5" />,
@@ -180,11 +179,11 @@ function ExportCard({ export: exp }: { export: any }) {
     print: 'Print',
   };
 
-  const statusColor = {
+  const statusColor: Record<string, Tone> = {
     success: 'success',
     pending: 'info',
     failed: 'danger',
-  } as const;
+  };
 
   const actionItems: DropdownItem[] = [
     { label: 'Download', icon: <Download className="h-4 w-4" />, disabled: exp.status !== 'success', onClick: () => toast({ title: 'Coming soon', tone: 'info' }) },
@@ -254,6 +253,7 @@ function ExportCard({ export: exp }: { export: any }) {
 }
 
 function QuickExportButton({ format, icon }: { format: string; icon: React.ReactNode }) {
+  const { toast } = useToast();
   const formatLabel: Record<string, string> = {
     pdf: 'Export as PDF',
     csv: 'Export as CSV',

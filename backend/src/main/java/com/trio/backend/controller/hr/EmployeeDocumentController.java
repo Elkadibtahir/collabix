@@ -42,7 +42,7 @@ public class EmployeeDocumentController {
 
     @PostMapping("/employees/{employeeId}/documents")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DOCUMENT_UPLOAD')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DOCUMENT_UPLOAD')")
     public ApiResponse<EmployeeDocumentResponse> upload(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -57,7 +57,7 @@ public class EmployeeDocumentController {
     }
 
     @PutMapping("/employees/{employeeId}/documents/{documentId}")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DOCUMENT_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DOCUMENT_UPDATE')")
     public ApiResponse<EmployeeDocumentResponse> replace(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -124,7 +124,7 @@ public class EmployeeDocumentController {
     }
 
     @PutMapping("/employees/{employeeId}/documents/{documentId}/verify")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DOCUMENT_VERIFY')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DOCUMENT_VERIFY')")
     public ApiResponse<EmployeeDocumentResponse> verify(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -135,7 +135,7 @@ public class EmployeeDocumentController {
     }
 
     @DeleteMapping("/employees/{employeeId}/documents/{documentId}/verify")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DOCUMENT_VERIFY')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DOCUMENT_VERIFY')")
     public ApiResponse<EmployeeDocumentResponse> unverify(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -147,7 +147,7 @@ public class EmployeeDocumentController {
 
     @DeleteMapping("/employees/{employeeId}/documents/{documentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DOCUMENT_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DOCUMENT_DELETE')")
     public void delete(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,

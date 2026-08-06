@@ -1,0 +1,17 @@
+﻿src/lib/api.ts(166,15): error TS2484: Export declaration conflicts with exported declaration of 'NormalizedApiError'.
+src/pages/handover/HandoverDetailPage.tsx(272,17): error TS2322: Type '{ id: string; tone: Tone; icon: ReactNode; title: string | undefined; timestamp: string; }[]' is not assignable to type 'TimelineItem[]'.
+  Type '{ id: string; tone: Tone; icon: React.ReactNode; title: string | undefined; timestamp: string; }' is not assignable to type 'TimelineItem'.
+    Types of property 'title' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/pages/knowledge/components/DocumentsPage.tsx(330,94): error TS18004: No value exists in scope for the shorthand property 'doc'. Either declare one or provide an initializer.
+src/pages/knowledge/components/DocumentsPage.tsx(334,102): error TS18004: No value exists in scope for the shorthand property 'doc'. Either declare one or provide an initializer.
+src/pages/knowledge/components/DocumentsPage.tsx(338,98): error TS18004: No value exists in scope for the shorthand property 'doc'. Either declare one or provide an initializer.
+src/pages/knowledge/components/DocumentsPage.tsx(394,90): error TS18004: No value exists in scope for the shorthand property 'doc'. Either declare one or provide an initializer.
+src/pages/knowledge/components/DocumentsPage.tsx(398,98): error TS18004: No value exists in scope for the shorthand property 'doc'. Either declare one or provide an initializer.
+src/pages/knowledge/components/DocumentsPage.tsx(402,94): error TS18004: No value exists in scope for the shorthand property 'doc'. Either declare one or provide an initializer.
+src/pages/knowledge/components/HandoverJournalPage.tsx(44,133): error TS2339: Property 'logDate' does not exist on type 'HandoverJournalResponse'.
+src/pages/productivity/Reporting & Analytics/AnalyticsPage.tsx(105,43): error TS2322: Type 'KPIMetric' is not assignable to type '{ label: string; value: string | number; color: "success" | "danger" | "warning" | "info" | "accent"; trend?: "up" | "down" | undefined; trendValue?: number | undefined; }'.
+  Types of property 'color' are incompatible.
+    Type 'string | undefined' is not assignable to type '"success" | "danger" | "warning" | "info" | "accent"'.
+      Type 'undefined' is not assignable to type '"success" | "danger" | "warning" | "info" | "accent"'.

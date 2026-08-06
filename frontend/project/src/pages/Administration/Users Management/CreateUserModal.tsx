@@ -41,7 +41,6 @@ export function CreateUserModal({ open, onClose }: CreateUserModalProps) {
   const createUser = useCreateUser();
   const { data: roles } = useRolesList();
   const { data: departments } = useDepartmentsList();
-  const departmentIdValue = useForm<CreateUserFormData>().watch('departmentId');
 
   const {
     register,

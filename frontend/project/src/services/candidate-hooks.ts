@@ -11,8 +11,8 @@ const keys = {
   interviews: (wsId: string, deptId: string, id: string) => ['candidates', 'interviews', wsId, deptId, id] as const,
 };
 
-export function useCandidatesList(wsId: string, deptId: string) {
-  return useQuery({ queryKey: keys.all(wsId, deptId), queryFn: () => candidateService.list(wsId, deptId), enabled: !!wsId && !!deptId });
+export function useCandidatesList(wsId: string, deptId: string, page = 0, size = 10) {
+  return useQuery({ queryKey: [...keys.all(wsId, deptId), page], queryFn: () => candidateService.list(wsId, deptId, { page, size }), enabled: !!wsId && !!deptId });
 }
 
 export function useCandidateDetail(wsId: string, deptId: string, candidateId: string | undefined) {

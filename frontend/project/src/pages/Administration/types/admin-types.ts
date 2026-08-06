@@ -107,9 +107,9 @@ export interface AuditLog {
   message: string;
   ipAddress?: string;
   userAgent?: string;
-  metadata?: Record<string, any>;
-  beforeState?: Record<string, any>;
-  afterState?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+  beforeState?: Record<string, unknown>;
+  afterState?: Record<string, unknown>;
 }
 
 // Filter Types

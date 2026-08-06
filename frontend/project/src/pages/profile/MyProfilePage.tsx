@@ -1,5 +1,4 @@
 import { useAuth } from '../../lib/auth-context';
-import { Card, CardBody, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
 import { Skeleton } from '../../components/ui/Skeleton';

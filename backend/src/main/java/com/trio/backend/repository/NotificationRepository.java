@@ -467,11 +467,27 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     // ==================== EXISTENCE CHECKS ====================
 
     /**
-     * VÃƒÂ©rifie si une notification non lue existe pour un recipient donnÃƒÂ©.
+     * VÃ©rifie si une notification non lue existe pour un recipient donnÃ©.
      */
     boolean existsByIdAndRecipient_IdAndStatus(
             UUID notificationId,
             UUID recipientId,
             NotificationStatus status
+    );
+
+    /**
+     * Checks if a notification of the given type for the recipient and resource was already
+     * sent after the given timestamp (used to de-duplicate scheduled reminders).
+     */
+    @Query("SELECT COUNT(n) > 0 FROM Notification n " +
+            "WHERE n.recipient.id = :recipientId " +
+            "AND n.notificationType = :type " +
+            "AND n.resourceId = :resourceId " +
+            "AND n.createdAt >= :since")
+    boolean existsSince(
+            @Param("recipientId") UUID recipientId,
+            @Param("type") Notification.NotificationType type,
+            @Param("resourceId") UUID resourceId,
+            @Param("since") Instant since
     );
 }

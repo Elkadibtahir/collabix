@@ -39,7 +39,7 @@ public class CandidateController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_CREATE')")
     public ApiResponse<CandidateResponse> create(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -70,7 +70,7 @@ public class CandidateController {
     }
 
     @PutMapping("/{candidateId}")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_UPDATE')")
     public ApiResponse<CandidateResponse> update(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -82,7 +82,7 @@ public class CandidateController {
 
     @DeleteMapping("/{candidateId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_DELETE')")
     public void delete(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -91,7 +91,7 @@ public class CandidateController {
     }
 
     @PutMapping("/{candidateId}/status")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_UPDATE')")
     public ApiResponse<CandidateResponse> changeStatus(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,

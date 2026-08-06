@@ -1,5 +1,4 @@
 import { AlertCircle, RefreshCw, X } from 'lucide-react';
-import { cn } from '../../../lib/cn';
 import { Button } from '../../ui/Button';
 
 interface PromptErrorCardProps {

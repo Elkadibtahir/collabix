@@ -1,5 +1,6 @@
-import { Suspense, lazy, useMemo, useState } from 'react';
+import { Suspense, lazy, useState, type ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import type { LucideIcon } from 'lucide-react';
 import { PageLoader } from './components/ui/PageLoader';
 import { WorkspaceGuard } from './components/layout/WorkspaceGuard';
 import {
@@ -31,11 +32,12 @@ import {
   Activity,
   CalendarDays,
   Archive,
-  type LucideIcon,
 } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './lib/theme';
-import { AuthProvider } from './lib/auth-context';
+import { AuthProvider, useAuth } from './lib/auth-context';
+import { isAdmin, isManager } from './lib/access';
+import { useWorkspacesList } from './services/workspace-hooks';
 import { ToastProvider } from './components/ui/Toast';
 import { AppShell } from './components/layout/AppShell';
 import { Card, CardBody } from './components/ui/Card';
@@ -69,6 +71,7 @@ const SessionExpiredPage = lazy(() => import('./pages/auth/SessionExpiredPage').
 const UnauthorizedPage = lazy(() => import('./pages/auth/UnauthorizedPage').then((m) => ({ default: m.UnauthorizedPage })));
 const ForbiddenPage = lazy(() => import('./pages/auth/ForbiddenPage').then((m) => ({ default: m.ForbiddenPage })));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
 const WorkspaceManagementPage = lazy(() => import('./pages/WorkspaceManagementPage').then((m) => ({ default: m.WorkspaceManagementPage })));
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage').then((m) => ({ default: m.OrganizationPage })));
 const DepartmentsPage = lazy(() => import('./pages/DepartmentsPage').then((m) => ({ default: m.DepartmentsPage })));
@@ -135,10 +138,11 @@ const AnnouncementsPage = lazy(() => import('./pages/communication').then((m) =>
 const MessageSearch = lazy(() => import('./pages/communication').then((m) => ({ default: m.MessageSearch })));
 const SharedFiles = lazy(() => import('./pages/communication').then((m) => ({ default: m.SharedFiles })));
 
-type RouteMeta = { title: string; icon: string; parent?: string };
+type RouteMeta = { title: string; icon: LucideIcon; parent?: string };
 
 const routeMeta: Record<string, RouteMeta> = {
   dashboard: { title: 'Dashboard', icon: LayoutGrid },
+  'personal-dashboard': { title: 'Personal Dashboard', icon: LayoutGrid },
   ai: { title: 'Collabix AI', icon: Sparkles },
   workspace: { title: 'Workspace', icon: Briefcase },
   'workspace-overview': { title: 'Workspace Overview', icon: LayoutGrid, parent: 'workspace' },
@@ -192,10 +196,14 @@ const routeMeta: Record<string, RouteMeta> = {
   'communication-files': { title: 'Shared Files', icon: FileText, parent: 'communication' },
 };
 
-function extractNavKey(pathname: string): string {
+function extractNavKey(pathname: string, search = ''): string {
   const parts = pathname.replace('/app/', '').split('/');
   if (parts[0] === 'admin' && parts.length > 1) {
     return `admin-${parts[1]}`;
+  }
+  if (parts[0] === 'departments' && parts.length > 1) {
+    const tab = new URLSearchParams(search).get('tab');
+    return tab ? `dept-${tab}` : 'departments';
   }
   if (parts[0] === 'profile' && parts.length > 1) {
     return `profile-${parts[1]}`;
@@ -214,10 +222,14 @@ function extractNavKey(pathname: string): string {
 
 function buildBreadcrumbs(navKey: string): BreadcrumbItem[] {
   const meta = routeMeta[navKey];
+  if (navKey.startsWith('dept-')) {
+    const label = navKey === 'dept-dashboard' ? 'Dashboard' : navKey.charAt(5).toUpperCase() + navKey.slice(6);
+    return [{ label: 'Departments', icon: <Network className="h-3.5 w-3.5" /> }, { label }];
+  }
   if (!meta) return [{ label: 'Dashboard' }];
   if (meta.parent) {
     const parentMeta = routeMeta[meta.parent];
-    const parentIcon = parentMeta ? <parentMeta.icon /> : undefined;
+    const parentIcon = parentMeta ? <parentMeta.icon className="h-3.5 w-3.5" /> : undefined;
     return [
       { label: meta.parent.charAt(0).toUpperCase() + meta.parent.slice(1), icon: parentIcon },
       { label: meta.title },
@@ -229,13 +241,23 @@ function buildBreadcrumbs(navKey: string): BreadcrumbItem[] {
 function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-  const navKey = extractNavKey(location.pathname);
+  const { user } = useAuth();
+  const navKey = extractNavKey(location.pathname, location.search);
 
   return (
     <AppShell
       activeNav={navKey}
       onNavigate={(id) => {
-        if (id.startsWith('admin-')) {
+        if (id.startsWith('dept-')) {
+          const tab = id.replace('dept-', '');
+          const deptId = user?.departmentId;
+          const ws = new URLSearchParams(location.search).get('ws');
+          if (!deptId) {
+            navigate('/app/dashboard');
+            return;
+          }
+          navigate(`/app/departments/${deptId}?tab=${tab}${ws ? `&ws=${ws}` : ''}`);
+        } else if (id.startsWith('admin-')) {
           navigate(`/app/admin/${id.replace('admin-', '')}`);
         } else if (id.startsWith('profile-')) {
           navigate(`/app/profile/${id.replace('profile-', '')}`);
@@ -243,6 +265,9 @@ function AppLayout() {
           const params = new URLSearchParams(location.search);
           const ws = params.get('ws');
           navigate(`/app/${id}${ws ? `?ws=${ws}` : ''}`);
+        } else if (id === 'my-dashboard') {
+          const ws = new URLSearchParams(location.search).get('ws');
+          navigate(`/app/personal-dashboard${ws ? `?ws=${ws}` : ''}`);
         } else {
           navigate(`/app/${id}`);
         }
@@ -288,10 +313,15 @@ function AdminRoleDetailsRoute() {
 function DepartmentDetailRoute() {
   const { departmentId } = useParams();
   const navigate = useNavigate();
-  if (!departmentId) return <Navigate to="/app/departments" replace />;
+  const { user } = useAuth();
+  const isAdminUser = isAdmin(user?.roles ?? []);
+  if (!departmentId) return <Navigate to={isAdminUser ? '/app/departments' : '/app/dashboard'} replace />;
   return (
     <Suspense fallback={<PageLoader />}>
-      <DepartmentDetailPage departmentId={departmentId} onBack={() => navigate('/app/departments')} />
+      <DepartmentDetailPage
+        departmentId={departmentId}
+        onBack={() => navigate(isAdminUser ? '/app/departments' : '/app/dashboard')}
+      />
     </Suspense>
   );
 }
@@ -359,6 +389,26 @@ function TaskDetailsRoute() {
   );
 }
 
+function WorkspaceMembersRoute() {
+  const [searchParams] = useSearchParams();
+  return <WorkspaceMembersPage workspaceId={searchParams.get('ws') ?? ''} />;
+}
+
+function WorkspaceActivityRoute() {
+  const [searchParams] = useSearchParams();
+  return <WorkspaceActivityPage workspaceId={searchParams.get('ws') ?? ''} />;
+}
+
+function WorkspaceAnalyticsRoute() {
+  const [searchParams] = useSearchParams();
+  return <WorkspaceAnalyticsPage workspaceId={searchParams.get('ws') ?? ''} />;
+}
+
+function WorkspaceReportsRoute() {
+  const [searchParams] = useSearchParams();
+  return <WorkspaceReportsPage workspaceId={searchParams.get('ws') ?? ''} />;
+}
+
 function PlaceholderPage({ navKey }: { navKey: string }) {
   const meta = routeMeta[navKey];
   const Icon = meta?.icon ?? LayoutGrid;
@@ -390,6 +440,38 @@ function PlaceholderPage({ navKey }: { navKey: string }) {
       </Card>
     </div>
   );
+}
+
+function AdminOnly({ children }: { children: ReactNode }) {
+  return (
+    <ProtectedRoute requiredRoles={['SUPER_ADMIN', 'ADMIN']} requireAll={false}>
+      {children}
+    </ProtectedRoute>
+  );
+}
+
+function HomeDashboard() {
+  const { user } = useAuth();
+  const location = useLocation();
+  const roles = user?.roles ?? [];
+  const { data: workspaces } = useWorkspacesList();
+
+  if (isAdmin(roles)) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <AdminDashboardPage />
+      </Suspense>
+    );
+  }
+
+  if (isManager(roles) && user?.departmentId && (workspaces?.length ?? 0) > 0) {
+    const ws = new URLSearchParams(location.search).get('ws');
+    return (
+      <Navigate to={`/app/departments/${user.departmentId}?tab=dashboard${ws ? `&ws=${ws}` : ''}`} replace />
+    );
+  }
+
+  return <DashboardPage />;
 }
 
 function AppRoutes() {
@@ -442,7 +524,8 @@ function AppRoutes() {
         </ProtectedRoute>
       }>
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="dashboard" element={<HomeDashboard />} />
+        <Route path="personal-dashboard" element={<Suspense fallback={<PageLoader />}><DashboardPage /></Suspense>} />
         <Route path="ai" element={<Suspense fallback={<PageLoader />}><AILayout /></Suspense>}>
           <Route index element={<AIDashboardPage />} />
           <Route path="prompts" element={<PromptLibraryPage />} />
@@ -459,15 +542,15 @@ function AppRoutes() {
         <Route path="ai/report/:reportId" element={<Suspense fallback={<PageLoader />}><ReportViewerPage /></Suspense>} />
         <Route path="activity" element={<Suspense fallback={<PageLoader />}><ActivityPage /></Suspense>} />
         <Route path="calendar" element={<Suspense fallback={<PageLoader />}><CalendarPage /></Suspense>} />
-        <Route path="workspace-overview" element={<Suspense fallback={<PageLoader />}><WorkspaceOverviewPage /></Suspense>} />
-        <Route path="all-workspaces" element={<Suspense fallback={<PageLoader />}><WorkspaceManagementPage /></Suspense>} />
-        <Route path="create-workspace" element={<Suspense fallback={<PageLoader />}><CreateWorkspacePage /></Suspense>} />
-        <Route path="edit-workspace/:workspaceId" element={<Suspense fallback={<PageLoader />}><EditWorkspacePage /></Suspense>} />
-        <Route path="workspace-members" element={<Suspense fallback={<PageLoader />}><WorkspaceMembersPage /></Suspense>} />
-        <Route path="workspace-activity" element={<Suspense fallback={<PageLoader />}><WorkspaceActivityPage /></Suspense>} />
-        <Route path="workspace-analytics" element={<Suspense fallback={<PageLoader />}><WorkspaceAnalyticsPage /></Suspense>} />
-        <Route path="workspace-reports" element={<Suspense fallback={<PageLoader />}><WorkspaceReportsPage /></Suspense>} />
-        <Route path="archived-workspaces" element={<Suspense fallback={<PageLoader />}><ArchivedWorkspacesPage /></Suspense>} />
+        <Route path="workspace-overview" element={<AdminOnly><Suspense fallback={<PageLoader />}><WorkspaceOverviewPage /></Suspense></AdminOnly>} />
+        <Route path="all-workspaces" element={<AdminOnly><Suspense fallback={<PageLoader />}><WorkspaceManagementPage /></Suspense></AdminOnly>} />
+        <Route path="create-workspace" element={<AdminOnly><Suspense fallback={<PageLoader />}><CreateWorkspacePage /></Suspense></AdminOnly>} />
+        <Route path="edit-workspace/:workspaceId" element={<AdminOnly><Suspense fallback={<PageLoader />}><EditWorkspacePage /></Suspense></AdminOnly>} />
+        <Route path="workspace-members" element={<AdminOnly><Suspense fallback={<PageLoader />}><WorkspaceMembersRoute /></Suspense></AdminOnly>} />
+        <Route path="workspace-activity" element={<AdminOnly><Suspense fallback={<PageLoader />}><WorkspaceActivityRoute /></Suspense></AdminOnly>} />
+        <Route path="workspace-analytics" element={<AdminOnly><Suspense fallback={<PageLoader />}><WorkspaceAnalyticsRoute /></Suspense></AdminOnly>} />
+        <Route path="workspace-reports" element={<AdminOnly><Suspense fallback={<PageLoader />}><WorkspaceReportsRoute /></Suspense></AdminOnly>} />
+        <Route path="archived-workspaces" element={<AdminOnly><Suspense fallback={<PageLoader />}><ArchivedWorkspacesPage /></Suspense></AdminOnly>} />
         <Route path="projects" element={<Suspense fallback={<PageLoader />}><ProjectsPage /></Suspense>} />
         <Route path="projects/:projectId" element={<ProjectDetailsRoute />} />
         <Route path="archived-projects" element={<Suspense fallback={<PageLoader />}><ArchivedProjectsPage /></Suspense>} />
@@ -481,11 +564,11 @@ function AppRoutes() {
         <Route path="handover" element={<Suspense fallback={<PageLoader />}><HandoverJournalPage /></Suspense>} />
         <Route path="notifications" element={<Suspense fallback={<PageLoader />}><NotificationsPage /></Suspense>} />
         <Route path="reports" element={<Suspense fallback={<PageLoader />}><ReportsPage /></Suspense>} />
-        <Route path="organization" element={<Suspense fallback={<PageLoader />}><OrganizationPage /></Suspense>} />
-        <Route path="departments" element={<Suspense fallback={<PageLoader />}><DepartmentsPage /></Suspense>} />
-        <Route path="teams" element={<Suspense fallback={<PageLoader />}><TeamsPage /></Suspense>} />
-        <Route path="members" element={<Suspense fallback={<PageLoader />}><MembersPage /></Suspense>} />
-        <Route path="members/:memberId" element={<MemberDetailsRoute />} />
+        <Route path="organization" element={<AdminOnly><Suspense fallback={<PageLoader />}><OrganizationPage /></Suspense></AdminOnly>} />
+        <Route path="departments" element={<AdminOnly><Suspense fallback={<PageLoader />}><DepartmentsPage /></Suspense></AdminOnly>} />
+        <Route path="teams" element={<AdminOnly><Suspense fallback={<PageLoader />}><TeamsPage /></Suspense></AdminOnly>} />
+        <Route path="members" element={<AdminOnly><Suspense fallback={<PageLoader />}><MembersPage /></Suspense></AdminOnly>} />
+        <Route path="members/:memberId" element={<AdminOnly><MemberDetailsRoute /></AdminOnly>} />
         <Route path="settings" element={
           <ProtectedRoute requiredPermissions={['WORKSPACE_UPDATE']}>
             <Suspense fallback={<PageLoader />}><WorkspaceSettingsPage /></Suspense>

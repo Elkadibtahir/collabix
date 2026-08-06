@@ -19,10 +19,10 @@ export function RestoreProjectModal({ open, onClose, wsId, deptId, projectId, pr
   const handleRestore = async () => {
     try {
       await restoreMutation.mutateAsync({ wsId, deptId, projectId });
-      toast({ title: 'Success', description: `Project "${projectName}" restored.` });
+      toast({ title: 'Success', description: `Project "${projectName}" restored.`, tone: 'success' });
       onClose();
     } catch {
-      toast({ title: 'Error', description: 'Failed to restore project.' });
+      toast({ title: 'Error', description: 'Failed to restore project.', tone: 'danger' });
     }
   };
 

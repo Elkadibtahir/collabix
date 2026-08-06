@@ -11,12 +11,13 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * HandoverJournal represents the automatically generated result built from multiple HandoverEntry records.
+ * HandoverJournal represents the automatically generated result built from multiple
+ * {@link HandoverEntry} records aggregated by day for a project.
  *
  * <p>Architecture notes:</p>
  * <ul>
  *     <li>HandoverJournal belongs to exactly one Workspace, one Department and one Project.</li>
- *     <li>No business logic is implemented here: it is a data container for future features.</li>
+ *     <li>One journal per project per day (enforced by a unique constraint).</li>
  *     <li>Soft-delete is handled via status.</li>
  * </ul>
  */
@@ -27,15 +28,14 @@ import java.util.UUID;
                 @Index(name = "idx_handover_journals_workspace_id", columnList = "workspace_id"),
                 @Index(name = "idx_handover_journals_department_id", columnList = "department_id"),
                 @Index(name = "idx_handover_journals_project_id", columnList = "project_id"),
-                @Index(name = "idx_handover_journals_shift", columnList = "shift"),
                 @Index(name = "idx_handover_journals_date", columnList = "journal_date"),
                 @Index(name = "idx_handover_journals_status", columnList = "status"),
                 @Index(name = "idx_handover_journals_created_at", columnList = "created_at")
         },
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_handover_journals_project_shift_date",
-                        columnNames = {"project_id", "shift", "journal_date"}
+                        name = "uk_handover_journals_project_date",
+                        columnNames = {"project_id", "journal_date"}
                 )
         }
 )
@@ -60,11 +60,6 @@ public class HandoverJournal extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "project_id", nullable = false, updatable = false)
     private Project project;
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "shift", nullable = false, length = 20)
-    private Shift shift;
 
     @NotNull
     @Column(name = "journal_date", nullable = false)
@@ -99,6 +94,34 @@ public class HandoverJournal extends AuditableEntity {
     private String recommendations;
 
     // =========================================================================
+    // Aggregated workflow counts
+    // =========================================================================
+
+    @NotNull
+    @Column(name = "total_handovers", nullable = false)
+    private Long totalHandovers = 0L;
+
+    @NotNull
+    @Column(name = "pending_handovers", nullable = false)
+    private Long pendingHandovers = 0L;
+
+    @NotNull
+    @Column(name = "completed_handovers", nullable = false)
+    private Long completedHandovers = 0L;
+
+    @NotNull
+    @Column(name = "rejected_handovers", nullable = false)
+    private Long rejectedHandovers = 0L;
+
+    @NotNull
+    @Column(name = "urgent_handovers", nullable = false)
+    private Long urgentHandovers = 0L;
+
+    @NotNull
+    @Column(name = "overdue_handovers", nullable = false)
+    private Long overdueHandovers = 0L;
+
+    // =========================================================================
     // Generation status
     // =========================================================================
 
@@ -122,11 +145,6 @@ public class HandoverJournal extends AuditableEntity {
     @Column(name = "status", nullable = false, length = 20)
     private HandoverJournalStatus status = HandoverJournalStatus.ACTIVE;
 
-    // =========================================================================
-    // Future-proofing: validation manager, history, versioning, export PDF, analytics,
-    // IA, search. Those fields are intentionally not implemented yet.
-    // =========================================================================
-
     @PrePersist
     @PreUpdate
     private void validateHierarchy() {
@@ -136,6 +154,12 @@ public class HandoverJournal extends AuditableEntity {
         if (status == null) {
             status = HandoverJournalStatus.ACTIVE;
         }
+        if (totalHandovers == null) totalHandovers = 0L;
+        if (pendingHandovers == null) pendingHandovers = 0L;
+        if (completedHandovers == null) completedHandovers = 0L;
+        if (rejectedHandovers == null) rejectedHandovers = 0L;
+        if (urgentHandovers == null) urgentHandovers = 0L;
+        if (overdueHandovers == null) overdueHandovers = 0L;
 
         Objects.requireNonNull(workspace, "workspace must not be null");
         Objects.requireNonNull(department, "department must not be null");
@@ -146,11 +170,6 @@ public class HandoverJournal extends AuditableEntity {
         if (!Objects.equals(workspace.getId(), project.getDepartment().getWorkspace().getId())) {
             throw new IllegalStateException("HandoverJournal.workspace must match project.department.workspace");
         }
-    }
-
-    public enum Shift {
-        MORNING,
-        EVENING
     }
 
     public enum GenerationStatus {
@@ -165,4 +184,3 @@ public class HandoverJournal extends AuditableEntity {
         DELETED
     }
 }
-

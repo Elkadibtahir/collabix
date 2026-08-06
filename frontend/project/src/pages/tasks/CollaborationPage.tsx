@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { MessageSquare, AtSign, Activity, Loader2, Users, AlertCircle, Search } from 'lucide-react';
+import { MessageSquare, AtSign, Activity, Loader2, AlertCircle, Search } from 'lucide-react';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -9,7 +9,6 @@ import { Avatar } from '../../components/ui/Avatar';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { usePersonalDashboard } from '../../services/workspace-hooks';
 import { useWorkspaceAnalytics } from '../../services/department-hooks';
-import { cn } from '../../lib/cn';
 
 interface FeedItem {
   id: string;
@@ -36,9 +35,9 @@ export function CollaborationPage() {
         items.push({
           id: `c-${c.id}`,
           type: 'comment',
-          authorName: c.authorName ?? 'Unknown',
+          authorName: 'You',
           content: c.content,
-          context: c.taskTitle ?? 'Task',
+          context: c.taskId ? `Task ${c.taskId}` : 'Task',
           timestamp: c.createdAt,
         });
       });
@@ -46,8 +45,8 @@ export function CollaborationPage() {
         items.push({
           id: `m-${m.id}`,
           type: 'mention',
-          authorName: m.mentionedBy ?? 'Someone',
-          content: m.content,
+          authorName: m.actorName ?? 'Someone',
+          content: m.context,
           context: 'Mention',
           timestamp: m.createdAt,
         });
@@ -56,7 +55,7 @@ export function CollaborationPage() {
         items.push({
           id: `a-${a.id}`,
           type: 'activity',
-          authorName: a.actorName ?? 'System',
+          authorName: 'You',
           content: a.description,
           context: a.projectName ?? 'General',
           timestamp: a.createdAt,
@@ -64,12 +63,12 @@ export function CollaborationPage() {
       });
       dashboard.workspaceActivities?.forEach((a) => {
         items.push({
-          id: `wa-${a.id}`,
+          id: `wa-${a.type}-${a.timestamp}`,
           type: 'activity',
           authorName: a.actorName ?? 'System',
           content: a.description,
-          context: a.projectName ?? 'General',
-          timestamp: a.createdAt,
+          context: a.type ?? 'Activity',
+          timestamp: a.timestamp,
         });
       });
     }

@@ -2,6 +2,7 @@ package com.trio.backend.repository;
 
 import com.trio.backend.entity.PerformanceReview;
 import com.trio.backend.enums.PerformanceLevel;
+import com.trio.backend.enums.ReviewPeriod;
 import com.trio.backend.enums.ReviewStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -20,7 +21,7 @@ public interface PerformanceReviewRepository extends JpaRepository<PerformanceRe
     List<PerformanceReview> findAllByEmployee_IdOrderByReviewDateDesc(UUID employeeId);
 
     boolean existsByEmployee_IdAndReviewPeriodAndReviewDateAndStatusNot(
-            UUID employeeId, String reviewPeriod, java.time.LocalDate reviewDate, ReviewStatus status);
+            UUID employeeId, ReviewPeriod reviewPeriod, java.time.LocalDate reviewDate, ReviewStatus status);
 
     long countByEmployee_Department_Id(UUID departmentId);
 

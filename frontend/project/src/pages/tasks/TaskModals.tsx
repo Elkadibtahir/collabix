@@ -2,8 +2,6 @@ import { useState, type FormEvent } from 'react';
 import { AlertTriangle, Plus, Archive, Trash2, RotateCcw } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Select } from '../../components/ui/Select';
 import { Textarea } from '../../components/ui/Textarea';
 
 export type TaskModalKind =

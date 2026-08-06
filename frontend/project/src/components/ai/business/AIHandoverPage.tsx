@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { AlertCircle } from 'lucide-react';
 import { AIBusinessHeader } from './AIBusinessHeader';
 import { AIBusinessContextPanel } from './AIBusinessContextPanel';
 import { AIBusinessResultPanel } from './AIBusinessResultPanel';
@@ -30,7 +29,7 @@ export function AIHandoverPage({
   const [resultData, setResultData] = useState<HandoverAIResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const generateMutation = useAIGenerateHandover();
+  const generateMutation = useAIGenerateHandover(workspaceId, departmentId, projectId);
 
   async function handleAnalyze() {
     setError(null);
@@ -42,8 +41,8 @@ export function AIHandoverPage({
       });
       setResultData(result);
       setHasResult(true);
-    } catch (err: any) {
-      setError(err?.message ?? 'AI generation failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'AI generation failed');
     }
   }
 

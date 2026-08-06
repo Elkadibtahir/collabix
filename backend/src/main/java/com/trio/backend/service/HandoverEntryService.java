@@ -2,48 +2,49 @@ package com.trio.backend.service;
 
 import com.trio.backend.dto.organisation.handover.CreateHandoverEntryRequest;
 import com.trio.backend.dto.organisation.handover.HandoverEntryResponse;
+import com.trio.backend.dto.organisation.handover.HandoverStatusUpdateRequest;
 import com.trio.backend.dto.organisation.handover.UpdateHandoverEntryRequest;
+import com.trio.backend.entity.HandoverEntry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.UUID;
 
+/**
+ * Service for the HandoverEntry workflow.
+ *
+ * <p>Lifecycle: DRAFT -&gt; PENDING (send) -&gt; ACCEPTED | REJECTED -&gt; COMPLETED.
+ * ARCHIVED and delete are soft lifecycle operations.</p>
+ */
 public interface HandoverEntryService {
 
-    HandoverEntryResponse create(
-            UUID workspaceId,
-            UUID departmentId,
-            UUID projectId,
-            CreateHandoverEntryRequest request
-    );
+    HandoverEntryResponse create(UUID workspaceId, CreateHandoverEntryRequest request);
 
-    HandoverEntryResponse getById(
-            UUID workspaceId,
-            UUID departmentId,
-            UUID projectId,
-            UUID handoverEntryId
-    );
+    HandoverEntryResponse getById(UUID workspaceId, UUID handoverEntryId);
 
     Page<HandoverEntryResponse> list(
             UUID workspaceId,
-            UUID departmentId,
+            HandoverEntry.HandoverStatus status,
+            HandoverEntry.Priority priority,
             UUID projectId,
             Pageable pageable
     );
 
-    HandoverEntryResponse update(
-            UUID workspaceId,
-            UUID departmentId,
-            UUID projectId,
-            UUID handoverEntryId,
-            UpdateHandoverEntryRequest request
-    );
+    Page<HandoverEntryResponse> inbox(UUID workspaceId, Pageable pageable);
 
-    void delete(
-            UUID workspaceId,
-            UUID departmentId,
-            UUID projectId,
-            UUID handoverEntryId
-    );
+    Page<HandoverEntryResponse> sent(UUID workspaceId, Pageable pageable);
+
+    HandoverEntryResponse update(UUID workspaceId, UUID handoverEntryId, UpdateHandoverEntryRequest request);
+
+    HandoverEntryResponse send(UUID workspaceId, UUID handoverEntryId, HandoverStatusUpdateRequest request);
+
+    HandoverEntryResponse accept(UUID workspaceId, UUID handoverEntryId, HandoverStatusUpdateRequest request);
+
+    HandoverEntryResponse reject(UUID workspaceId, UUID handoverEntryId, HandoverStatusUpdateRequest request);
+
+    HandoverEntryResponse complete(UUID workspaceId, UUID handoverEntryId, HandoverStatusUpdateRequest request);
+
+    HandoverEntryResponse archive(UUID workspaceId, UUID handoverEntryId, HandoverStatusUpdateRequest request);
+
+    void delete(UUID workspaceId, UUID handoverEntryId);
 }
-

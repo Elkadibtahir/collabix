@@ -13,26 +13,29 @@ import {
   Eye,
   Edit2,
   Archive,
-  RotateCcw,
-  Filter,
-  Trash2,
+  Briefcase,
+  Network,
+  Folder,
 } from 'lucide-react';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Badge, type Tone } from '../../components/ui/Badge';
 import { IconButton } from '../../components/ui/IconButton';
-import { Progress } from '../../components/ui/Progress';
 import { Dropdown, type DropdownItem } from '../../components/ui/Dropdown';
 import { Select } from '../../components/ui/Select';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';
+import { Avatar } from '../../components/ui/Avatar';
 import { useToast } from '../../components/ui/Toast';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/cn';
-import { useTasksList, useCreateTask, useUpdateTask, useDeleteTask } from '../../services/task-hooks';
-import { mapTaskResponse } from './tasks-types';
-import type { Task } from './tasks-types';
+import { useWorkspacesList } from '../../services/workspace-hooks';
+import { useDepartmentList } from '../../services/department-hooks';
+import { useProjectList } from '../../services/project-hooks';
+import { useTasksList, useCreateTask, useUpdateTask, useUpdateTaskStatus, useDeleteTask } from '../../services/task-hooks';
+import { mapTaskResponse, FRONTEND_STATUS_MAP } from './tasks-types';
+import type { Task, TaskStatus } from './tasks-types';
 import { TaskModal, type TaskModalKind } from './TaskModals';
 
 type ViewMode = 'kanban' | 'list' | 'calendar';
@@ -70,14 +73,31 @@ export function TasksPage({ workspaceId = '', departmentId = '', projectId = '' 
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [modal, setModal] = useState<TaskModalKind>(null);
 
-  const { data: tasksPage, isLoading, isError, error } = useTasksList(workspaceId, departmentId, projectId, {
+  // Context selector state (used when no ws/dept/proj provided in URL)
+  const [selWs, setSelWs] = useState(workspaceId);
+  const [selDept, setSelDept] = useState(departmentId);
+  const [selProj, setSelProj] = useState(projectId);
+
+  const { data: workspaces } = useWorkspacesList();
+  const { data: departments } = useDepartmentList(selWs || undefined);
+  const { data: projects } = useProjectList(selWs || undefined, selDept || undefined, undefined, 0);
+
+  const hasContext = !!workspaceId && !!departmentId && !!projectId;
+
+  // Resolve effective context: use URL props, or selections from the fallback selector.
+  const effWs = workspaceId || selWs;
+  const effDept = departmentId || selDept;
+  const effProj = projectId || selProj;
+
+  const { data: tasksPage, isLoading, isError, error } = useTasksList(effWs, effDept, effProj, {
     search: search || undefined,
     status: statusFilter || undefined,
   });
 
-  const createTask = useCreateTask(workspaceId, departmentId, projectId);
-  const updateTask = useUpdateTask(workspaceId, departmentId, projectId, '');
-  const deleteTask = useDeleteTask(workspaceId, departmentId, projectId);
+  const createTask = useCreateTask(effWs, effDept, effProj);
+  const updateTask = useUpdateTask(effWs, effDept, effProj);
+  const updateStatus = useUpdateTaskStatus(effWs, effDept, effProj);
+  const deleteTask = useDeleteTask(effWs, effDept, effProj);
 
   const tasks: Task[] = useMemo(() => {
     if (!tasksPage?.content) return [];
@@ -124,7 +144,7 @@ export function TasksPage({ workspaceId = '', departmentId = '', projectId = '' 
         });
         break;
       case 'edit':
-        updateTask.mutate({ title: data.title, description: data.description }, {
+        updateTask.mutate({ taskId: modal.task.id, data: { title: data.title, description: data.description } }, {
           onSuccess: () => toast({ title: 'Task updated', tone: 'success' }),
           onError: () => toast({ title: 'Failed to update task', tone: 'danger' }),
         });
@@ -144,14 +164,69 @@ export function TasksPage({ workspaceId = '', departmentId = '', projectId = '' 
     }
   }, [modal, createTask, updateTask, deleteTask, toast]);
 
-  if (!workspaceId || !departmentId || !projectId) {
+if (!hasContext) {
     return (
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-1.5">
           <h1 className="text-page font-semibold text-text-primary">Tasks</h1>
-          <p className="text-body text-text-secondary">Manage and track all tasks across your projects.</p>
+          <p className="text-body text-text-secondary">Select a workspace, department, and project to manage its tasks.</p>
         </div>
-        <EmptyState icon={<FolderKanban />} title="Select a Project" description="Please navigate to a project first to view its tasks." />
+        <Card>
+          <CardBody className="space-y-4">
+            <div className="flex items-center gap-2 text-text-secondary">
+              <Briefcase className="h-4 w-4" />
+              <span className="text-body font-medium text-text-primary">Workspace</span>
+            </div>
+            <Select
+              value={selWs}
+              onChange={(e) => { setSelWs(e.target.value); setSelDept(''); setSelProj(''); }}
+              options={[
+                { value: '', label: 'Select a workspace' },
+                ...(workspaces ?? []).map((w) => ({ value: w.id, label: w.name })),
+              ]}
+            />
+            {selWs && (
+              <>
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Network className="h-4 w-4" />
+                  <span className="text-body font-medium text-text-primary">Department</span>
+                </div>
+                <Select
+                  value={selDept}
+                  onChange={(e) => { setSelDept(e.target.value); setSelProj(''); }}
+                  options={[
+                    { value: '', label: 'Select a department' },
+                    ...(departments ?? []).map((d) => ({ value: d.id, label: d.name })),
+                  ]}
+                />
+              </>
+            )}
+            {selWs && selDept && (
+              <>
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Folder className="h-4 w-4" />
+                  <span className="text-body font-medium text-text-primary">Project</span>
+                </div>
+                <Select
+                  value={selProj}
+                  onChange={(e) => setSelProj(e.target.value)}
+                  options={[
+                    { value: '', label: 'Select a project' },
+                    ...(projects?.content ?? []).map((p) => ({ value: p.id, label: p.name })),
+                  ]}
+                />
+              </>
+            )}
+            {selWs && selDept && selProj && (
+              <Button
+                leftIcon={<FolderKanban />}
+                onClick={() => navigate(`/app/tasks?ws=${selWs}&dept=${selDept}&proj=${selProj}`)}
+              >
+                View Tasks
+              </Button>
+            )}
+          </CardBody>
+        </Card>
       </div>
     );
   }
@@ -213,7 +288,7 @@ export function TasksPage({ workspaceId = '', departmentId = '', projectId = '' 
               { value: '', label: 'All Statuses' },
               ...taskStatuses.map((s) => ({ value: s, label: statusLabels[s] })),
             ]}
-            placeholder="Status"
+          
           />
           <Dropdown
             trigger={
@@ -249,7 +324,16 @@ export function TasksPage({ workspaceId = '', departmentId = '', projectId = '' 
       {filteredTasks.length === 0 && !isLoading ? (
         <EmptyState icon={<CheckCircle2 />} title="No tasks found" description="Try adjusting your search or filters to find tasks." />
       ) : viewMode === 'kanban' ? (
-        <KanbanView tasks={filteredTasks} onTaskClick={(id) => navigate(`/app/tasks/${id}?ws=${workspaceId}&dept=${departmentId}&proj=${projectId}`)} onEdit={(task) => setModal({ kind: 'edit', task })} onArchive={(task) => setModal({ kind: 'archive', task })} />
+        <KanbanView
+          tasks={filteredTasks}
+          wsId={effWs}
+          deptId={effDept}
+          projId={effProj}
+          updateStatus={updateStatus}
+          onTaskClick={(id) => navigate(`/app/tasks/${id}?ws=${workspaceId}&dept=${departmentId}&proj=${projectId}`)}
+          onEdit={(task) => setModal({ kind: 'edit', task })}
+          onArchive={(task) => setModal({ kind: 'archive', task })}
+        />
       ) : viewMode === 'list' ? (
         <ListView tasks={filteredTasks} onTaskClick={(id) => navigate(`/app/tasks/${id}?ws=${workspaceId}&dept=${departmentId}&proj=${projectId}`)} onEdit={(task) => setModal({ kind: 'edit', task })} onArchive={(task) => setModal({ kind: 'archive', task })} />
       ) : (
@@ -275,28 +359,93 @@ function StatCard({ label, value, tone }: { label: string; value: number; tone: 
   );
 }
 
-function KanbanView({ tasks, onTaskClick, onEdit, onArchive }: { tasks: Task[]; onTaskClick: (id: string) => void; onEdit: (task: { id: string; title: string; description?: string }) => void; onArchive: (task: { id: string; title: string }) => void }) {
+const KANBAN_COLUMNS: Array<{ id: TaskStatus; label: string; tone: Tone }> = [
+  { id: 'todo', label: 'To Do', tone: 'info' },
+  { id: 'in-progress', label: 'In Progress', tone: 'accent' },
+  { id: 'in-review', label: 'In Review', tone: 'warning' },
+  { id: 'blocked', label: 'Blocked', tone: 'danger' },
+  { id: 'completed', label: 'Done', tone: 'success' },
+];
+
+const priorityToneMap: Record<string, Tone> = {
+  urgent: 'danger',
+  high: 'warning',
+  medium: 'info',
+  low: 'success',
+};
+
+function KanbanView({
+  tasks,
+  wsId,
+  deptId,
+  projId,
+  updateStatus,
+  onTaskClick,
+  onEdit,
+  onArchive,
+}: {
+  tasks: Task[];
+  wsId: string;
+  deptId: string;
+  projId: string;
+  updateStatus: ReturnType<typeof useUpdateTaskStatus>;
+  onTaskClick: (id: string) => void;
+  onEdit: (task: Task) => void;
+  onArchive: (task: Task) => void;
+}) {
+  const { toast } = useToast();
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+
+  const handleDrop = (targetStatus: TaskStatus) => (e: React.DragEvent) => {
+    e.preventDefault();
+    const taskId = draggedId;
+    setDraggedId(null);
+    if (!taskId) return;
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || task.status === targetStatus) return;
+    updateStatus.mutate(
+      { taskId, status: FRONTEND_STATUS_MAP[targetStatus] },
+      {
+        onSuccess: () => toast({ title: 'Task status updated', tone: 'success' }),
+        onError: () => toast({ title: 'Failed to update task status', tone: 'danger' }),
+      },
+    );
+  };
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 overflow-x-auto pb-4">
-      {taskStatuses.filter(s => s !== 'archived').map((status) => {
-        const statusTasks = tasks.filter((t) => t.status === status);
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 overflow-x-auto pb-4">
+      {KANBAN_COLUMNS.map((col) => {
+        const colTasks = tasks.filter((t) => t.status === col.id);
         return (
-          <div key={status} className="flex flex-col gap-3 min-w-[300px] sm:min-w-[320px]">
+          <div key={col.id} className="flex flex-col gap-3 min-w-[220px]">
             <div className="flex items-center justify-between px-3 py-2">
               <div className="flex items-center gap-2">
-                <Badge tone={statusColors[status]} variant="soft" dot>
-                  {statusLabels[status]}
-                </Badge>
-                <span className="text-2xs font-semibold text-text-tertiary">{statusTasks.length}</span>
+                <Badge tone={col.tone} variant="soft" dot />
+                <span className="text-2xs font-semibold text-text-tertiary">{col.label}</span>
               </div>
+              <Badge tone="neutral" variant="soft">{colTasks.length}</Badge>
             </div>
-            <div className="flex flex-col gap-2">
-              {statusTasks.length === 0 ? (
+            <div
+              className="flex flex-col gap-2 min-h-[60px]"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop(col.id)}
+            >
+              {colTasks.length === 0 ? (
                 <div className="rounded-lg border-2 border-dashed border-border-subtle bg-surface p-4 text-center">
-                  <p className="text-2xs text-text-tertiary">No tasks</p>
+                  <p className="text-2xs text-text-tertiary">Drop tasks here</p>
                 </div>
               ) : (
-                statusTasks.map((task) => <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task.id)} onEdit={() => onEdit(task)} onArchive={() => onArchive(task)} />)
+                colTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onDragStart={() => setDraggedId(task.id)}
+                    onClick={() => onTaskClick(task.id)}
+                    onEdit={() => onEdit(task)}
+                    onArchive={() => onArchive(task)}
+                    isDragging={draggedId === task.id}
+                  />
+                ))
               )}
             </div>
           </div>
@@ -306,8 +455,21 @@ function KanbanView({ tasks, onTaskClick, onEdit, onArchive }: { tasks: Task[]; 
   );
 }
 
-function TaskCard({ task, onClick, onEdit, onArchive }: { task: Task; onClick: () => void; onEdit: () => void; onArchive: () => void }) {
-  const priorityColor: Record<string, Tone> = { urgent: 'danger', high: 'warning', medium: 'info', low: 'success' };
+function TaskCard({
+  task,
+  onDragStart,
+  onClick,
+  onEdit,
+  onArchive,
+  isDragging,
+}: {
+  task: Task;
+  onDragStart: () => void;
+  onClick: () => void;
+  onEdit: () => void;
+  onArchive: () => void;
+  isDragging: boolean;
+}) {
   const actionItems: DropdownItem[] = [
     { label: 'Open', icon: <Eye className="h-4 w-4" />, onClick },
     { label: 'Edit', icon: <Edit2 className="h-4 w-4" />, onClick: onEdit },
@@ -315,32 +477,66 @@ function TaskCard({ task, onClick, onEdit, onArchive }: { task: Task; onClick: (
     { label: 'Archive', icon: <Archive className="h-4 w-4" />, onClick: onArchive },
   ];
   return (
-    <Card className="hover:border-border-default transition-colors cursor-pointer group">
-      <CardBody className="space-y-2" onClick={onClick}>
-        <div className="flex items-start justify-between gap-2">
-          <h4 className="text-body font-medium text-text-primary line-clamp-2 flex-1">{task.title}</h4>
-          <Dropdown
-            trigger={
-              <IconButton label="Actions" variant="ghost" size="sm" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                <MoreHorizontal className="h-4 w-4" />
-              </IconButton>
-            }
-            items={actionItems}
-            align="right"
-          />
-        </div>
-        {task.description && <p className="text-2xs text-text-tertiary line-clamp-2">{task.description}</p>}
-        <div className="flex items-center justify-between gap-2">
-          <Badge tone={priorityColor[task.priority]} variant="soft">{task.priority}</Badge>
-        </div>
+    <div
+      draggable
+      onDragStart={(e: React.DragEvent) => {
+        onDragStart();
+        e.dataTransfer.effectAllowed = 'move';
+      }}
+      onClick={onClick}
+      className={cn(
+        'rounded-lg border border-border-subtle bg-surface p-3 hover:border-border-default hover:shadow-cx-sm transition-all cursor-pointer group',
+        isDragging && 'opacity-50',
+      )}
+    >
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <h4 className="text-body font-medium text-text-primary line-clamp-2 flex-1">{task.title}</h4>
+        <Dropdown
+          trigger={
+            <IconButton
+              label="Actions"
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 shrink-0"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="h-3 w-4" />
+            </IconButton>
+          }
+          items={actionItems}
+          align="right"
+        />
+      </div>
+      {task.description && (
+        <p className="text-2xs text-text-tertiary line-clamp-2 mb-3">{task.description}</p>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {task.priority && (
+          <Badge tone={priorityToneMap[task.priority] ?? 'info'} variant="soft" dot>
+            {task.priority}
+          </Badge>
+        )}
         {task.deadline && (
-          <div className="flex items-center gap-1.5 text-2xs text-text-tertiary">
+          <div className="flex items-center gap-1 text-2xs text-text-tertiary">
             <Clock className="h-3 w-3" />
             <span>{task.deadline}</span>
           </div>
         )}
-      </CardBody>
-    </Card>
+      </div>
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border-subtle">
+        {task.assigneeName ? (
+          <div className="flex items-center gap-1.5">
+            <Avatar name={task.assigneeName} size="xs" />
+            <span className="text-2xs text-text-tertiary truncate max-w-[100px]">
+              {task.assigneeName}
+            </span>
+          </div>
+        ) : (
+          <Badge tone="neutral" variant="soft" dot>Unassigned</Badge>
+        )}
+        <Badge tone="neutral" variant="soft" dot>{task.projectName}</Badge>
+      </div>
+    </div>
   );
 }
 

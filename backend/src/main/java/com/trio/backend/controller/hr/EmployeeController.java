@@ -38,7 +38,7 @@ public class EmployeeController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_CREATE')")
     public ApiResponse<EmployeeResponse> create(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -69,7 +69,7 @@ public class EmployeeController {
     }
 
     @PutMapping("/{employeeId}")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_UPDATE')")
     public ApiResponse<EmployeeResponse> update(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -81,7 +81,7 @@ public class EmployeeController {
 
     @DeleteMapping("/{employeeId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_DELETE')")
     public void delete(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,

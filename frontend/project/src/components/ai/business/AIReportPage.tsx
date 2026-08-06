@@ -39,8 +39,8 @@ export function AIReportPage({
       });
       setResultData(result);
       setHasResult(true);
-    } catch (err: any) {
-      setError(err?.message ?? 'Report generation failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Report generation failed');
     }
   }
 

@@ -118,8 +118,8 @@ function interviewsBase(wsId: string, deptId: string, candidateId: string) {
 }
 
 export const candidateService = {
-  list: (wsId: string, deptId: string) =>
-    apiClient.get<PageResponse<CandidateResponse>>(`${base(wsId, deptId)}`),
+  list: (wsId: string, deptId: string, params?: { page?: number; size?: number; keyword?: string; status?: string }) =>
+    apiClient.get<PageResponse<CandidateResponse>>(`${base(wsId, deptId)}`, { params }),
 
   getById: (wsId: string, deptId: string, candidateId: string) =>
     apiClient.get<CandidateResponse>(`${base(wsId, deptId)}/${candidateId}`),

@@ -1,5 +1,5 @@
-import { useState, useCallback, useMemo } from 'react';
-import { Calendar, CalendarDays, SearchX } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Calendar, SearchX } from 'lucide-react';
 import { CalendarHeader } from './CalendarHeader';
 import { CalendarControls } from './CalendarControls';
 import { CalendarGrid } from './CalendarGrid';

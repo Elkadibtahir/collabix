@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   ArrowLeft,
   Mail,
@@ -10,7 +10,6 @@ import {
   CheckCircle2,
   Clock,
   TrendingUp,
-  Settings,
   MoreHorizontal,
   Edit2,
   UserX,
@@ -18,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
+import { Badge, type Tone } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
 import { IconButton } from '../../components/ui/IconButton';
 import { Progress } from '../../components/ui/Progress';
@@ -28,7 +27,6 @@ import { BarChart } from '../../components/ui/Charts';
 import { Dropdown, type DropdownItem } from '../../components/ui/Dropdown';
 import { cn } from '../../lib/cn';
 import { useToast } from '../../components/ui/Toast';
-import { useUserDetail } from '../../services/admin-hooks';
 import type { MemberProfile } from './members-types';
 import { membersList } from './members-data';
 
@@ -92,10 +90,10 @@ export function MemberDetailsPage({ memberId, onBack }: MemberDetailsPageProps) 
                 <p className="text-body text-text-secondary">{member.jobTitle}</p>
                 <div className="flex flex-wrap items-center gap-2 mt-2">
                   <Badge tone="accent" variant="soft">{member.department}</Badge>
-                  <Badge tone={statusColor[member.status] as any} variant="soft" dot>
+                  <Badge tone={statusColor[member.status] as Tone} variant="soft" dot>
                     {member.status}
                   </Badge>
-                  <Badge tone={availabilityColor[member.availability] as any} variant="soft" dot>
+                  <Badge tone={availabilityColor[member.availability] as Tone} variant="soft" dot>
                     {member.availability}
                   </Badge>
                 </div>

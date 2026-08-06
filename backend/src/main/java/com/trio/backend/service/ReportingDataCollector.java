@@ -88,8 +88,13 @@ public class ReportingDataCollector {
             Map<String, Object> map = new LinkedHashMap<>();
             map.put("id", hj.getId());
             map.put("projectName", hj.getProject().getName());
-            map.put("shift", hj.getShift());
             map.put("journalDate", hj.getJournalDate() != null ? hj.getJournalDate().toString() : null);
+            map.put("totalHandovers", hj.getTotalHandovers());
+            map.put("pendingHandovers", hj.getPendingHandovers());
+            map.put("completedHandovers", hj.getCompletedHandovers());
+            map.put("rejectedHandovers", hj.getRejectedHandovers());
+            map.put("urgentHandovers", hj.getUrgentHandovers());
+            map.put("overdueHandovers", hj.getOverdueHandovers());
             map.put("executiveSummary", hj.getGeneratedSummary());
             map.put("generatedAt", hj.getGenerationDate() != null ? hj.getGenerationDate().toString() : null);
             return map;

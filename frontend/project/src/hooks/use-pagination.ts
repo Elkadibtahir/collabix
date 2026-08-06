@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { Pageable, SortField, SortDirection, PageMetadata } from '../types/api';
-import { DEFAULT_PAGEABLE } from '../types/api';
 
 export interface PaginationConfig {
   initialPage?: number;

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { CheckCircle2, AlertCircle, Info, XCircle, X } from 'lucide-react';
 import { cn } from '../../lib/cn';
 
-type ToastTone = 'success' | 'warning' | 'danger' | 'info';
+type ToastTone = 'success' | 'warning' | 'danger' | 'info' | 'error';
 
 interface Toast {
   id: number;
@@ -22,6 +22,7 @@ const toneConfig: Record<ToastTone, { icon: ReactNode; color: string }> = {
   success: { icon: <CheckCircle2 className="h-5 w-5" />, color: 'text-success-500' },
   warning: { icon: <AlertCircle className="h-5 w-5" />, color: 'text-warning-500' },
   danger: { icon: <XCircle className="h-5 w-5" />, color: 'text-danger-500' },
+  error: { icon: <XCircle className="h-5 w-5" />, color: 'text-danger-500' },
   info: { icon: <Info className="h-5 w-5" />, color: 'text-info-500' },
 };
 

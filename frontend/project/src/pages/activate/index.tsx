@@ -22,8 +22,10 @@ export function ActivationPage() {
     let cancelled = false;
 
     async function validate() {
+      const activationToken = token;
+      if (!activationToken) return;
       try {
-        await authService.validateActivationToken(token);
+        await authService.validateActivationToken(activationToken);
         if (!cancelled) {
           setStatus('valid');
         }

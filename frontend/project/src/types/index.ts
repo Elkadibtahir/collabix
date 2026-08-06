@@ -13,6 +13,8 @@ export type {
   MutationState,
 } from './api';
 
+export type { NormalizedApiError } from '../lib/api';
+
 export {
   buildPageable,
   buildSearchParams,

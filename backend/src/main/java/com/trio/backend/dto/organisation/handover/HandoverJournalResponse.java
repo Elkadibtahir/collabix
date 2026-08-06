@@ -9,14 +9,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Response for un HandoverJournal generated automaticment.
- *
- * <p>Conventions architecturals respectsd :</p>
- * <ul>
- *     <li>Aplatissement des objects relationnels sous forme de clÃƒÂ©s pivots (UUID).</li>
- *     <li>Absence de validations (Bean Validation) : DTO used excludedsivement en flow de output (Read/Response).</li>
- *     <li>Exposition des mÃƒÂ©tagivens d'audit (Instant) alignÃƒÂ©es sur AuditableEntity.</li>
- * </ul>
+ * Response for a HandoverJournal generated automatically.
  */
 @Getter
 @Setter
@@ -24,44 +17,47 @@ public class HandoverJournalResponse {
 
     private UUID id;
 
-    // =========================================================================
-    // ClÃƒÂ©s de partitionnement / Isolement multi-tenant
-    // =========================================================================
     private UUID workspaceId;
+
     private UUID departmentId;
+
     private UUID projectId;
 
-    // =========================================================================
-    // MÃƒÂ©tagivens temporelles et contextuelles du log
-    // =========================================================================
-    private HandoverJournal.Shift shift;
-    private LocalDateTime logDate;
+    private LocalDateTime journalDate;
 
-    // =========================================================================
-    // Contents textuels consolidÃƒÂ©s par le moteur de synthÃƒÂ¨se (IA)
-    // =========================================================================
     private String generatedSummary;
+
     private String mainDoneWork;
+
     private String mainRemainingWork;
+
     private String blockers;
+
     private String difficulties;
+
     private String recommendations;
 
-    // =========================================================================
-    // States du cycle de generation automatic
-    // =========================================================================
+    private Long totalHandovers;
+
+    private Long pendingHandovers;
+
+    private Long completedHandovers;
+
+    private Long rejectedHandovers;
+
+    private Long urgentHandovers;
+
+    private Long overdueHandovers;
+
     private HandoverJournal.GenerationStatus generationStatus;
+
     private LocalDateTime generationDate;
+
     private UUID generationProcessedBy;
 
-    // =========================================================================
-    // Cycle de vie / Soft Delete
-    // =========================================================================
     private HandoverJournal.HandoverJournalStatus status;
 
-    // =========================================================================
-    // Traces d'audit (HÃƒÂ©ritÃƒÂ©es de AuditableEntity)
-    // =========================================================================
     private Instant createdAt;
+
     private Instant updatedAt;
 }

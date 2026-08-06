@@ -1,10 +1,10 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useWorkspacesList } from '../../services/workspace-hooks';
 import { useWorkspaceId } from '../../hooks/useWorkspaceId';
-import { AlertCircle, Briefcase, Plus, RefreshCw } from 'lucide-react';
-import { Card, CardBody } from '../ui/Card';
+import { useAuth } from '../../lib/auth-context';
+import { isAdmin } from '../../lib/access';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { EmptyState } from '../ui/EmptyState';
 import { Skeleton } from '../ui/Skeleton';
 import type { ReactNode } from 'react';
 
@@ -22,8 +22,9 @@ const WS_DEPENDENT_ROUTES = new Set([
 ]);
 
 export function WorkspaceGuard({ children, routeKey }: { children: ReactNode; routeKey: string }) {
-  const location = useLocation();
   const workspaceId = useWorkspaceId();
+  const { user } = useAuth();
+  const isAdminUser = isAdmin(user?.roles ?? []);
   const { data: workspaces, isLoading, isError, refetch } = useWorkspacesList();
 
   // Skip guard for workspace management pages
@@ -53,9 +54,9 @@ export function WorkspaceGuard({ children, routeKey }: { children: ReactNode; ro
 
   // No workspaces at all
   if (!workspaces || workspaces?.length === 0) {
-    // If on a workspace-dependent route, redirect to all-workspaces
+    // If on a workspace-dependent route, redirect to all-workspaces (admin) or the role-aware dashboard
     if (WS_DEPENDENT_ROUTES.has(routeKey)) {
-      return <Navigate to="/app/all-workspaces" replace />;
+      return <Navigate to={isAdminUser ? '/app/all-workspaces' : '/app/dashboard'} replace />;
     }
     return <>{children}</>;
   }

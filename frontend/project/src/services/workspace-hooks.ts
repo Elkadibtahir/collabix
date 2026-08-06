@@ -95,20 +95,3 @@ export function usePersonalDashboard(workspaceId: string | undefined) {
     enabled: !!workspaceId,
   });
 }
-
-export function useArchivedWorkspacesList() {
-  return useQuery<WorkspaceSummaryResponse[]>({
-    queryKey: [...workspaceKeys.all, 'archived'],
-    queryFn: () => workspaceService.listArchived(),
-  });
-}
-
-export function useRestoreWorkspace() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => workspaceService.restore(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: workspaceKeys.all });
-    },
-  });
-}

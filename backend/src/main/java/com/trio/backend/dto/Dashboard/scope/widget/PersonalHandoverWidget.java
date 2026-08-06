@@ -7,39 +7,30 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Widget representant un handover (passation) de the user
- * authenticated pour today dans le Personal Dashboard.
+ * Widget representing a handover (handover/passation) of the authenticated user
+ * for today in the Personal Dashboard.
  *
- * <p>Affiche les passations oÃ¹ the user est l'author ou
- * le recipient pour la day in progress.</p>
+ * <p>Shows handovers where the user is the sender or the receiver.</p>
  */
 @Getter
 @Setter
 public class PersonalHandoverWidget {
 
-    /**
-     * ID of the entry de handover.
-     */
     private UUID id;
 
-    /**
-     * Nom of the project associÃ© au handover.
-     */
     private String projectName;
 
-    /**
-     * Quart de travail (MORNING, EVENING).
-     */
-    private String shift;
+    private String senderName;
 
-    /**
-     * Heure de passage.
-     */
-    private LocalDateTime passedAt;
+    private String receiverName;
 
-    /**
-     * Status de validation manager.
-     */
-    private String managerValidationStatus;
+    private String title;
+
+    private String status;
+
+    private String priority;
+
+    private LocalDateTime dueDate;
+
+    private LocalDateTime createdAt;
 }
-

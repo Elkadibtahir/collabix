@@ -42,10 +42,6 @@ public class AIOrchestratorServiceImpl implements AIOrchestratorService {
             AIProvider provider = pipeline.get(i);
             String prompt = promptBuilder.build(task, provider, input, previousOutput, request.getContext());
             prompts.add(prompt);
-
-            if (i == 0 && provider == AIProvider.GEMINI) {
-                previousOutput = "placeholder";
-            }
         }
 
         previousOutput = null;

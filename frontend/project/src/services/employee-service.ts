@@ -74,13 +74,23 @@ export interface EmployeeStatistics {
   newHiresThisMonth: number;
 }
 
+export interface EmployeeTimelineEntry {
+  id: string;
+  eventType: string;
+  title: string;
+  description?: string;
+  occurredAt: string;
+  actorId?: string;
+  actorName?: string;
+}
+
 function base(wsId: string, deptId: string) {
   return `/workspaces/${wsId}/departments/${deptId}/employees`;
 }
 
 export const employeeService = {
-  list: (wsId: string, deptId: string) =>
-    apiClient.get<PageResponse<EmployeeResponse>>(`${base(wsId, deptId)}`),
+  list: (wsId: string, deptId: string, params?: { page?: number; size?: number; keyword?: string; status?: string }) =>
+    apiClient.get<PageResponse<EmployeeResponse>>(`${base(wsId, deptId)}`, { params }),
 
   getById: (wsId: string, deptId: string, employeeId: string) =>
     apiClient.get<EmployeeResponse>(`${base(wsId, deptId)}/${employeeId}`),
@@ -93,6 +103,9 @@ export const employeeService = {
 
   delete: (wsId: string, deptId: string, employeeId: string) =>
     apiClient.delete<void>(`${base(wsId, deptId)}/${employeeId}`),
+
+  getTimeline: (wsId: string, deptId: string, employeeId: string) =>
+    apiClient.get<EmployeeTimelineEntry[]>(`${base(wsId, deptId)}/${employeeId}/timeline`),
 
   getStats: (wsId: string, deptId: string) =>
     apiClient.get<EmployeeStatistics>(`${base(wsId, deptId)}/stats`),

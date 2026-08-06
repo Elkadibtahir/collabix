@@ -40,7 +40,7 @@ public class CandidateAttachmentController {
 
     @PostMapping("/candidates/{candidateId}/attachments")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_ATTACHMENT_UPLOAD')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_ATTACHMENT_UPLOAD')")
     public ApiResponse<CandidateAttachmentResponse> upload(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -53,7 +53,7 @@ public class CandidateAttachmentController {
     }
 
     @PutMapping("/candidates/{candidateId}/attachments/{attachmentId}")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_ATTACHMENT_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_ATTACHMENT_UPDATE')")
     public ApiResponse<CandidateAttachmentResponse> replace(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -119,7 +119,7 @@ public class CandidateAttachmentController {
 
     @DeleteMapping("/candidates/{candidateId}/attachments/{attachmentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_ATTACHMENT_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'CANDIDATE_ATTACHMENT_DELETE')")
     public void delete(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,

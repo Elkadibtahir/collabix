@@ -2,13 +2,12 @@ import { useState } from 'react';
 import {
   ArrowLeft,
   Star,
-  Eye,
   Plus,
   Search,
   ChevronDown,
   Filter,
 } from 'lucide-react';
-import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
+import { Card, CardBody } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
@@ -17,6 +16,7 @@ import { Dropdown } from '../../../components/ui/Dropdown';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { cn } from '../../../lib/cn';
 import { reportTemplates } from './reports-data';
+import type { ReportTemplate } from './report-types';
 
 export function ReportTemplatesPage({ onBack, onUseTemplate }: { onBack?: () => void; onUseTemplate?: (templateId: string) => void }) {
   const [search, setSearch] = useState('');
@@ -125,7 +125,7 @@ function TemplateCard({
   onToggleFavorite,
   onUse,
 }: {
-  template: any;
+   template: ReportTemplate;
   isFavorite: boolean;
   onToggleFavorite: () => void;
   onUse: () => void;

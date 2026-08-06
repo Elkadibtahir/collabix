@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Clock, Filter } from 'lucide-react';
-import { Card, CardBody, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
+import { Card, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';

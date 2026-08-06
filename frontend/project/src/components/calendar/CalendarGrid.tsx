@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { cn } from '../../lib/cn';
 import { weekDays, type CalendarEvent, type CalendarView } from './CalendarTypes';
-import { CalendarEventCard } from './CalendarEventCard';
 
 interface CalendarGridProps {
   view: CalendarView;
@@ -12,8 +11,6 @@ interface CalendarGridProps {
 }
 
 export function CalendarGrid({ view, currentDate, events, onSelectEvent, onDateClick }: CalendarGridProps) {
-  if (view === 'agenda') return null;
-
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const startDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -29,6 +26,8 @@ export function CalendarGrid({ view, currentDate, events, onSelectEvent, onDateC
     });
     return map;
   }, [events]);
+
+  if (view === 'agenda') return null;
 
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const date = new Date(currentYear, currentMonth, i + 1);

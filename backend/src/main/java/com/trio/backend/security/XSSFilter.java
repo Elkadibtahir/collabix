@@ -26,14 +26,20 @@ public class XSSFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        chain.doFilter(new XSSRequestWrapper((HttpServletRequest) request), response);
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        // Skip body sanitization for JSON requests to avoid corrupting JSON syntax
+        String contentType = httpRequest.getContentType();
+        boolean isJson = contentType != null && contentType.toLowerCase().contains("application/json");
+        chain.doFilter(new XSSRequestWrapper(httpRequest, isJson), response);
     }
 
     private static class XSSRequestWrapper extends HttpServletRequestWrapper {
         private byte[] cachedBody;
+        private final boolean skipBodySanitization;
 
-        XSSRequestWrapper(HttpServletRequest request) {
+        XSSRequestWrapper(HttpServletRequest request, boolean skipBodySanitization) {
             super(request);
+            this.skipBodySanitization = skipBodySanitization;
         }
 
         @Override
@@ -77,8 +83,12 @@ public class XSSFilter implements Filter {
 
         private void cacheBody() throws IOException {
             String body = new String(super.getInputStream().readAllBytes());
-            String sanitized = sanitize(body);
-            cachedBody = sanitized.getBytes();
+            if (skipBodySanitization || body.isBlank()) {
+                cachedBody = body.getBytes();
+            } else {
+                String sanitized = sanitize(body);
+                cachedBody = sanitized.getBytes();
+            }
         }
     }
 

@@ -9,9 +9,8 @@ import { IconButton } from '../../components/ui/IconButton';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Tabs, type TabItem } from '../../components/ui/Tabs';
 import { Dropdown } from '../../components/ui/Dropdown';
-import { cn } from '../../lib/cn';
 import { useConversationsList, useConversationsByType } from '../../services/conversation-hooks';
-import type { ConversationResponse, ConversationType } from '../../types/communication';
+import type { ConversationResponse } from '../../types/communication';
 
 const tabs: TabItem[] = [
   { id: 'all', label: 'All Channels' },

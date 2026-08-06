@@ -1,5 +1,4 @@
 import { useRef, useEffect } from 'react';
-import { cn } from '../../../lib/cn';
 import { type Message } from './ConversationTypes';
 import { ConversationMessageAI } from './ConversationMessageAI';
 import { ConversationMessageUser } from './ConversationMessageUser';

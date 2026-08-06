@@ -1,33 +1,20 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
-  Search,
   Plus,
   Download,
-  Filter,
   ChevronDown,
   TrendingUp,
   TrendingDown,
   BarChart3,
   PieChart,
   LineChart,
-  Users,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  Zap,
-  Target,
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
 import { Progress } from '../../../components/ui/Progress';
-import { BarChart, LineChart as LineChartComponent, PieChart as PieChartComponent } from '../../../components/ui/Charts';
-import { Avatar, AvatarGroup } from '../../../components/ui/Avatar';
-import { IconButton } from '../../../components/ui/IconButton';
-import { Dropdown, type DropdownItem } from '../../../components/ui/Dropdown';
-import { Tabs, type TabItem } from '../../../components/ui/Tabs';
-import { Timeline, type TimelineItem } from '../../../components/ui/Timeline';
+import { Dropdown } from '../../../components/ui/Dropdown';
+import { type TabItem } from '../../../components/ui/Tabs';
 import { cn } from '../../../lib/cn';
 import {
   kpiMetrics,
@@ -39,10 +26,8 @@ import {
   teamAnalytics,
   projectAnalytics,
   recentActivity,
-  productivityMetrics,
-  workloadMetrics,
-  performanceMetrics,
 } from './analytics-data';
+import type { DepartmentAnalytics, TeamAnalytics, ProjectAnalytics } from './analytics-types';
 
 type ViewMode = 'overview' | 'departments' | 'teams' | 'projects';
 
@@ -303,7 +288,7 @@ export function AnalyticsPage() {
   );
 }
 
-function MetricCard({ metric }: { metric: any }) {
+function MetricCard({ metric }: { metric: { label: string; value: string | number; color?: string; trend?: 'up' | 'down' | 'stable'; trendValue?: number } }) {
   const bgColor = {
     accent: 'bg-accent-50 dark:bg-accent-100 text-accent-700 dark:text-accent-200',
     success: 'bg-success-50 dark:bg-success-100 text-success-700 dark:text-success-200',
@@ -316,7 +301,7 @@ function MetricCard({ metric }: { metric: any }) {
                     metric.trend === 'down' ? <TrendingDown className="h-3 w-3" /> : null;
 
   return (
-    <div className={cn('rounded-lg border border-border-subtle p-3', bgColor[metric.color])}>
+    <div className={cn('rounded-lg border border-border-subtle p-3', bgColor[metric.color as keyof typeof bgColor] ?? bgColor.info)}>
       <p className="text-2xs font-medium opacity-75 mb-2">{metric.label}</p>
       <div className="flex items-center justify-between">
         <p className="text-section font-bold">{metric.value}</p>
@@ -331,7 +316,7 @@ function MetricCard({ metric }: { metric: any }) {
   );
 }
 
-function DepartmentCard({ department }: { department: any }) {
+function DepartmentCard({ department }: { department: DepartmentAnalytics }) {
   return (
     <Card>
       <CardBody className="space-y-4">
@@ -351,7 +336,7 @@ function DepartmentCard({ department }: { department: any }) {
         <div>
           <p className="text-caption font-medium text-text-secondary mb-3">Active Projects</p>
           <div className="space-y-2">
-            {department.projects.map((project: any) => (
+            {department.projects.map((project) => (
               <div key={project.id}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-caption text-text-primary">{project.name}</span>
@@ -379,7 +364,7 @@ function DepartmentCard({ department }: { department: any }) {
   );
 }
 
-function TeamCard({ team }: { team: any }) {
+function TeamCard({ team }: { team: TeamAnalytics }) {
   return (
     <Card>
       <CardBody className="space-y-4">
@@ -424,7 +409,7 @@ function TeamCard({ team }: { team: any }) {
   );
 }
 
-function ProjectCard({ project }: { project: any }) {
+function ProjectCard({ project }: { project: ProjectAnalytics }) {
   const statusColor = {
     'on-track': 'success',
     'at-risk': 'warning',
@@ -443,7 +428,7 @@ function ProjectCard({ project }: { project: any }) {
               Manager: {project.manager} • {project.department}
             </p>
           </div>
-          <Badge tone={statusColor[project.overview.status]} variant="soft">
+          <Badge tone={statusColor[project.overview.status as keyof typeof statusColor] ?? 'neutral'} variant="soft">
             {project.overview.status}
           </Badge>
         </div>
@@ -468,7 +453,7 @@ function ProjectCard({ project }: { project: any }) {
         <div>
           <p className="text-caption font-medium text-text-secondary mb-2">Milestones</p>
           <div className="space-y-1">
-            {project.milestones.map((milestone: any) => (
+            {project.milestones.map((milestone) => (
               <div key={milestone.name} className="flex items-center justify-between p-2 rounded bg-surface-2">
                 <span className="text-caption text-text-primary">{milestone.name}</span>
                 <Badge

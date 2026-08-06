@@ -163,4 +163,3 @@ const apiClient = {
 };
 
 export { api, apiClient };
-export type { NormalizedApiError };

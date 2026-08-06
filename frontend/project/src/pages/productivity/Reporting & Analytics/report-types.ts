@@ -54,7 +54,7 @@ export interface ReportSection {
   id: string;
   type: 'summary' | 'statistics' | 'charts' | 'tables' | 'timeline' | 'details';
   title: string;
-  content: any;
+  content: unknown;
   order: number;
 }
 

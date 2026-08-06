@@ -1,12 +1,9 @@
-import { useState } from 'react';
 import { useToast } from '../components/ui/Toast';
 import {
-  Building2,
   Network,
   Users,
   UserPlus,
   FolderKanban,
-  CheckSquare,
   Shield,
   Activity,
   Mail,
@@ -14,7 +11,7 @@ import {
   Plus,
   type LucideIcon,
 } from 'lucide-react';
-import { Card, CardBody, CardHeader, CardTitle, CardDescription, SectionHeader } from '../components/ui/Card';
+import { Card, CardBody, SectionHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';

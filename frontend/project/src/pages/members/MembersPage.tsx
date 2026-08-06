@@ -5,9 +5,6 @@ import {
   LayoutGrid,
   LayoutList,
   ChevronDown,
-  Mail,
-  Phone,
-  MapPin,
   Briefcase,
   Clock,
   Users,
@@ -21,16 +18,14 @@ import {
 import { Card, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Badge } from '../../components/ui/Badge';
-import { Avatar, AvatarGroup } from '../../components/ui/Avatar';
+import { Badge, type Tone } from '../../components/ui/Badge';
+import { Avatar } from '../../components/ui/Avatar';
 import { IconButton } from '../../components/ui/IconButton';
 import { Table } from '../../components/ui/Table';
 import { Progress } from '../../components/ui/Progress';
 import { Dropdown, type DropdownItem } from '../../components/ui/Dropdown';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { cn } from '../../lib/cn';
 import { useToast } from '../../components/ui/Toast';
-import { useUsersList } from '../../services/admin-hooks';
 import type { MemberProfile, MemberFilters } from './members-types';
 import { membersList } from './members-data';
 
@@ -202,7 +197,7 @@ export function MembersPage() {
             </IconButton>
           </div>
 
-          <Button leftIcon={<Plus />} onClick={() => toast({ title: 'Coming Soon', description: 'Invite member feature is coming soon.' })}>Invite Member</Button>
+          <Button leftIcon={<Plus />} onClick={() => toast({ title: 'Coming Soon', description: 'Invite member feature is coming soon.', tone: 'info' })}>Invite Member</Button>
         </div>
       </div>
 
@@ -301,10 +296,10 @@ function MemberCard({ member }: { member: MemberProfile }) {
 
         {/* Status badges */}
         <div className="flex items-center gap-2 border-t border-border-subtle pt-3">
-          <Badge tone={statusColor[member.status] as any} variant="soft" dot>
+          <Badge tone={statusColor[member.status] as Tone} variant="soft" dot>
             {member.status}
           </Badge>
-          <Badge tone={availabilityColor[member.availability] as any} variant="soft" dot>
+          <Badge tone={availabilityColor[member.availability] as Tone} variant="soft" dot>
             {member.availability}
           </Badge>
         </div>
@@ -323,7 +318,7 @@ function DetailRow({ icon, label }: { icon: React.ReactNode; label: string }) {
 }
 
 function MembersTableView({ members }: { members: MemberProfile[] }) {
-  const statusTones: Record<string, any> = {
+  const statusTones: Record<string, Tone> = {
     active: 'success',
     away: 'warning',
     offline: 'neutral',

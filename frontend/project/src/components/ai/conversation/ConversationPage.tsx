@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ConversationComposer } from './ConversationComposer';
 import { ConversationWelcome } from './ConversationWelcome';

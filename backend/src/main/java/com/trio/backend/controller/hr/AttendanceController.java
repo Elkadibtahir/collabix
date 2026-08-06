@@ -38,7 +38,7 @@ public class AttendanceController {
 
     @PostMapping("/employees/{employeeId}/attendance/check-in")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ATTENDANCE_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ATTENDANCE_CREATE')")
     public ApiResponse<AttendanceResponse> checkIn(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -49,7 +49,7 @@ public class AttendanceController {
     }
 
     @PostMapping("/employees/{employeeId}/attendance/check-out")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ATTENDANCE_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ATTENDANCE_CREATE')")
     public ApiResponse<AttendanceResponse> checkOut(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -61,7 +61,7 @@ public class AttendanceController {
 
     @PostMapping("/employees/{employeeId}/attendance")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ATTENDANCE_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ATTENDANCE_CREATE')")
     public ApiResponse<AttendanceResponse> create(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -106,7 +106,7 @@ public class AttendanceController {
     }
 
     @PutMapping("/attendance/{attendanceId}")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ATTENDANCE_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ATTENDANCE_UPDATE')")
     public ApiResponse<AttendanceResponse> update(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -118,7 +118,7 @@ public class AttendanceController {
 
     @DeleteMapping("/attendance/{attendanceId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ATTENDANCE_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ATTENDANCE_DELETE')")
     public void delete(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,

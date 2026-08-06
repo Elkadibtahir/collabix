@@ -37,7 +37,7 @@ public class PerformanceReviewController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_CREATE')")
     public ApiResponse<PerformanceReviewResponse> create(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -68,7 +68,7 @@ public class PerformanceReviewController {
     }
 
     @PutMapping("/{reviewId}")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_UPDATE')")
     public ApiResponse<PerformanceReviewResponse> update(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -79,7 +79,7 @@ public class PerformanceReviewController {
     }
 
     @PutMapping("/{reviewId}/submit")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_SUBMIT')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_SUBMIT')")
     public ApiResponse<PerformanceReviewResponse> submit(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -89,7 +89,7 @@ public class PerformanceReviewController {
     }
 
     @PutMapping("/{reviewId}/approve")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_APPROVE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_APPROVE')")
     public ApiResponse<PerformanceReviewResponse> approve(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -99,7 +99,7 @@ public class PerformanceReviewController {
     }
 
     @PutMapping("/{reviewId}/reject")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_APPROVE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_APPROVE')")
     public ApiResponse<PerformanceReviewResponse> reject(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -110,7 +110,7 @@ public class PerformanceReviewController {
     }
 
     @PutMapping("/{reviewId}/archive")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_UPDATE')")
     public ApiResponse<PerformanceReviewResponse> archive(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -121,7 +121,7 @@ public class PerformanceReviewController {
 
     @DeleteMapping("/{reviewId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'PERFORMANCE_REVIEW_DELETE')")
     public void delete(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,

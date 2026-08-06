@@ -1,8 +1,7 @@
 import { Heart, Play, Eye } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { Badge } from '../../ui/Badge';
-import { promptCategories, type PromptCategoryId, type Prompt } from './PromptTypes';
-import { useNavigate } from 'react-router-dom';
+import { promptCategories, type Prompt } from './PromptTypes';
 
 interface PromptCardProps {
   prompt: Prompt;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, FolderKanban, Calendar, Clock, Users, AlertCircle, Edit2, Archive, Activity, Settings, Info,
 } from 'lucide-react';

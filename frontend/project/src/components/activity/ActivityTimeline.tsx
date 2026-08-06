@@ -1,4 +1,3 @@
-import { cn } from '../../lib/cn';
 
 interface ActivityTimelineProps {
   children: React.ReactNode;

@@ -72,7 +72,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         Task task = taskRepository.findByIdAndProject_Id(taskId, projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found."));
 
-        if (task.getStatus() != TaskStatus.ACTIVE) {
+        if (task.getStatus().isTerminal()) {
             throw new ResourceNotFoundException("Task not found.");
         }
 
@@ -154,7 +154,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         Task task = taskRepository.findByIdAndProject_Id(taskId, projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found."));
 
-        if (task.getStatus() != TaskStatus.ACTIVE) {
+        if (task.getStatus().isTerminal()) {
             throw new ResourceNotFoundException("Task not found.");
         }
 

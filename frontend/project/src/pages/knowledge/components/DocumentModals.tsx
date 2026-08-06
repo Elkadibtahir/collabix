@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type FormEvent } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Upload, FileText, Archive, Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { Modal } from '../../../components/ui/Modal';
 import { Input } from '../../../components/ui/Input';

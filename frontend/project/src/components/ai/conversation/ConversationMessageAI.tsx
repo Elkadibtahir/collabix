@@ -1,6 +1,4 @@
 import { Sparkles } from 'lucide-react';
-import { cn } from '../../../lib/cn';
-import { Avatar } from '../../ui/Avatar';
 import { ConversationResponseActions } from './ConversationResponseActions';
 import { ConversationFollowUp } from './ConversationFollowUp';
 import { ConversationMessageMarkdown } from './ConversationMessageMarkdown';

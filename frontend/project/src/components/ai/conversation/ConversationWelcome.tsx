@@ -1,5 +1,4 @@
-import { Sparkles, MessageSquare, BarChart3, ScrollText, FileText } from 'lucide-react';
-import { cn } from '../../../lib/cn';
+import { Sparkles, BarChart3, ScrollText, FileText } from 'lucide-react';
 import { Button } from '../../ui/Button';
 
 const suggestedPrompts = [

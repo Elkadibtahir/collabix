@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Archive, RotateCcw, Users, Network, FolderKanban, AlertCircle, RefreshCw, Search } from 'lucide-react';
-import { Card, CardBody, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Archive, RotateCcw, Users, Network, FolderKanban, RefreshCw, Search } from 'lucide-react';
+import { Card, CardBody } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';

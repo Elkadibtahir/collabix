@@ -127,7 +127,7 @@ class TeamServiceImplTest {
         request.setName("Platform");
 
         // Service normalizes name (trim + lower)
-        when(teamRepository.existsByWorkspace_IdAndName(workspace.getId(), "platform"))
+        when(teamRepository.existsByWorkspace_IdAndDepartment_IdAndName(workspace.getId(), department.getId(), "platform"))
                 .thenReturn(true);
 
         ConflictException ex = assertThrows(ConflictException.class,
@@ -147,7 +147,7 @@ class TeamServiceImplTest {
                 .department(department)
                 .build();
 
-        when(teamRepository.existsByWorkspace_IdAndName(workspace.getId(), "platform")).thenReturn(false);
+        when(teamRepository.existsByWorkspace_IdAndDepartment_IdAndName(workspace.getId(), department.getId(), "platform")).thenReturn(false);
         when(teamMapper.toEntity(request)).thenReturn(new Team());
         when(teamRepository.save(any(Team.class))).thenReturn(team);
         when(teamMapper.toResponse(team)).thenReturn(new com.trio.backend.dto.organisation.team.TeamResponse());

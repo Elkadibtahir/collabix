@@ -49,10 +49,10 @@ export function EditProjectModal({ open, onClose, wsId, deptId, project }: EditP
     };
     try {
       await updateMutation.mutateAsync({ wsId, deptId, projectId: project.id, data });
-      toast({ title: 'Success', description: 'Project updated successfully.' });
+      toast({ title: 'Success', description: 'Project updated successfully.', tone: 'success' });
       onClose();
     } catch {
-      toast({ title: 'Error', description: 'Failed to update project.' });
+      toast({ title: 'Error', description: 'Failed to update project.', tone: 'danger' });
     }
   };
 

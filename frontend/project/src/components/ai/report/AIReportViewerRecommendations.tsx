@@ -1,5 +1,4 @@
 import { AlertCircle, ArrowRight } from 'lucide-react';
-import { cn } from '../../../lib/cn';
 import { Badge } from '../../ui/Badge';
 import { type Recommendation } from './AIReportViewerTypes';
 

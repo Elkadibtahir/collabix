@@ -2,7 +2,11 @@
 
 type Key = readonly unknown[];
 
-export function createQueryKeys<T extends Record<string, (...args: unknown[]) => Key>>(domain: string, definitions: T): { all: Key; list: (filters?: Record<string, unknown>) => Key; details: T } {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createQueryKeys<T extends Record<string, (...args: any[]) => Key>>(
+  domain: string,
+  definitions: T,
+): { all: Key; list: (filters?: Record<string, unknown>) => Key; details: T } {
   const all: Key = [domain];
 
   const list = (filters?: Record<string, unknown>): Key => {
@@ -12,8 +16,10 @@ export function createQueryKeys<T extends Record<string, (...args: unknown[]) =>
 
   const details = {} as T;
   for (const key in definitions) {
-    const fn = definitions[key];
-    details[key] = ((...args: unknown[]) => [domain, key, ...fn(...args)]) as T[typeof key];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fn = definitions[key] as (...args: any[]) => Key;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    details[key] = ((...args: any[]) => [domain, key, ...fn(...args)]) as unknown as T[typeof key];
   }
 
   return { all, list, details };

@@ -9,5 +9,5 @@ public class UpdateMessageRequest {
 
     private String content;
 
-    private boolean isPinned;
+    private Boolean isPinned;
 }

@@ -1,27 +1,23 @@
-import { Card, CardBody, CardHeader, CardTitle, SectionHeader } from '../../../components/ui/Card';
-import { Progress } from '../../../components/ui/Progress';
-import { BarChart, LineChart } from '../../../components/ui/Charts';
+import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
+import { BarChart, LineChart, PieChart } from '../../../components/ui/Charts';
 import { Button } from '../../../components/ui/Button';
 import { useDepartmentDashboard } from '../../../services/department-hooks';
-import { TrendingUp, TrendingDown, Code, Bug, GitBranch, CheckCircle, Clock, GitPullRequest, Activity, Loader2, AlertCircle } from 'lucide-react';
+import { useWorkspaceAnalytics } from '../../../services/department-hooks';
+import { Code, Bug, GitBranch, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 
 const toneBg: Record<string, string> = {
   accent: 'bg-accent-50 text-accent-600 dark:bg-accent-100 dark:text-accent-300',
   success: 'bg-success-50 text-success-700 dark:bg-success-100 dark:text-success-500',
   warning: 'bg-warning-50 text-warning-700 dark:bg-warning-100 dark:text-warning-500',
-  info: 'bg-info-50 text-info-700 dark:bg-info-100 dark:text-info-500',
+  info: 'bg-info-50 text-info-700 dark:bg-info-100 dark:text-info-300',
 };
 
-function KpiCard({ icon, label, value, change, up, tone = 'accent' }: { icon: React.ReactNode; label: string; value: string; change?: number; up?: boolean; tone?: string }) {
+function KpiCard({ icon, label, value, tone = 'accent' }: { icon: React.ReactNode; label: string; value: string | number; tone?: string }) {
   return (
     <Card>
       <CardBody>
         <div className="flex items-start justify-between mb-2">
           <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${toneBg[tone]} [&>svg]:h-4 [&>svg]:w-4`}>{icon}</span>
-          <span className={`inline-flex items-center gap-0.5 text-2xs font-medium ${up ? 'text-success-600' : 'text-danger-600'}`}>
-            {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-            {change}%
-          </span>
         </div>
         <p className="text-2xs font-medium uppercase tracking-wide text-text-tertiary">{label}</p>
         <p className="text-page font-semibold text-text-primary leading-tight mt-1">{value}</p>
@@ -32,8 +28,9 @@ function KpiCard({ icon, label, value, change, up, tone = 'accent' }: { icon: Re
 
 export function DevelopmentAnalyticsTab({ wsId, deptId }: { wsId: string; deptId: string }) {
   const { data: dashboard, isLoading, isError, error, refetch } = useDepartmentDashboard(wsId, deptId);
+  const { data: analytics, isLoading: analyticsLoading, isError: analyticsError } = useWorkspaceAnalytics(wsId);
 
-  if (isLoading) {
+  if (isLoading || analyticsLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-text-tertiary" />
@@ -41,7 +38,7 @@ export function DevelopmentAnalyticsTab({ wsId, deptId }: { wsId: string; deptId
     );
   }
 
-  if (isError || !dashboard) {
+  if (isError || !dashboard || analyticsError) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <AlertCircle className="h-8 w-8 text-danger-500" />
@@ -57,63 +54,49 @@ export function DevelopmentAnalyticsTab({ wsId, deptId }: { wsId: string; deptId
     ? Math.round(((taskSummary.totalTasks - taskSummary.activeTasks) / taskSummary.totalTasks) * 100)
     : 0;
 
+  const charts = analytics?.charts ?? [];
+  const lineChart = charts.find((c) => c.type === 'LINE');
+  const barChart = charts.find((c) => c.type === 'BAR');
+  const pieChart = charts.find((c) => c.type === 'PIE' || c.type === 'DONUT');
+
+  const lineData = lineChart?.series?.[0]?.points?.map((p) => ({ label: p.label ?? p.category ?? '', value: p.value })) ?? [];
+  const barData = barChart?.series?.[0]?.points?.map((p) => ({ label: p.label ?? p.category ?? '', value: p.value })) ?? [];
+  const pieData = pieChart?.series?.[0]?.points?.map((p) => ({ label: p.label ?? p.category ?? '', value: p.value, tone: 'accent' as const })) ?? [];
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
-        <KpiCard icon={<Code />} label="Active Projects" value={String(overview.activeProjects)} change={5} up tone="success" />
-        <KpiCard icon={<Bug />} label="Overdue Tasks" value={String(taskSummary.overdueTasks)} change={8} up tone="warning" />
-        <KpiCard icon={<GitBranch />} label="Task Completion" value={`${completionRate}%`} change={4} up tone="accent" />
-        <KpiCard icon={<CheckCircle />} label="Active Tasks" value={String(taskSummary.activeTasks)} change={2} up tone="info" />
+        <KpiCard icon={<Code />} label="Active Projects" value={overview.activeProjects} tone="success" />
+        <KpiCard icon={<Bug />} label="Overdue Tasks" value={taskSummary.overdueTasks} tone="warning" />
+        <KpiCard icon={<GitBranch />} label="Task Completion" value={`${completionRate}%`} tone="accent" />
+        <KpiCard icon={<CheckCircle />} label="Active Tasks" value={taskSummary.activeTasks} tone="info" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle>Velocity Trend</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{lineChart?.title ?? 'Velocity Trend'}</CardTitle></CardHeader>
           <CardBody>
-            <LineChart
-              data={[
-                { label: 'S20', value: 32 },
-                { label: 'S21', value: 36 },
-                { label: 'S22', value: 40 },
-                { label: 'S23', value: 38 },
-                { label: 'S24', value: 42 },
-              ]}
-              height={200}
-              tone="accent"
-            />
+            {lineData.length > 0 ? <LineChart data={lineData} height={200} tone="accent" /> : <p className="text-caption text-text-tertiary py-8 text-center">No velocity data available</p>}
           </CardBody>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Bug Trends</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{barChart?.title ?? 'Distribution'}</CardTitle></CardHeader>
           <CardBody>
-            <BarChart
-              data={[
-                { label: 'Jan', value: 45 },
-                { label: 'Feb', value: 38 },
-                { label: 'Mar', value: 52 },
-                { label: 'Apr', value: 35 },
-                { label: 'May', value: 28 },
-                { label: 'Jun', value: 23 },
-              ]}
-              height={200}
-              tone="danger"
-            />
+            {barData.length > 0 ? <BarChart data={barData} height={200} tone="danger" /> : <p className="text-caption text-text-tertiary py-8 text-center">No distribution data available</p>}
           </CardBody>
         </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card>
-          <CardHeader><CardTitle>Sprint Completion</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Task Health</CardTitle></CardHeader>
           <CardBody>
             <BarChart
               data={[
-                { label: 'S20', value: 85 },
-                { label: 'S21', value: 78 },
-                { label: 'S22', value: 92 },
-                { label: 'S23', value: 88 },
-                { label: 'S24', value: 65 },
+                { label: 'Active', value: taskSummary.activeTasks },
+                { label: 'Overdue', value: taskSummary.overdueTasks },
+                { label: 'Archived', value: taskSummary.archivedTasks },
               ]}
               height={160}
               tone="success"
@@ -122,70 +105,30 @@ export function DevelopmentAnalyticsTab({ wsId, deptId }: { wsId: string; deptId
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Release Metrics</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{pieChart?.title ?? 'Status Breakdown'}</CardTitle></CardHeader>
           <CardBody>
-            <BarChart
-              data={[
-                { label: 'v3.0', value: 45 },
-                { label: 'v3.1', value: 52 },
-                { label: 'v3.2', value: 75 },
-              ]}
-              height={160}
-              tone="accent"
-            />
+            {pieData.length > 0 ? <PieChart data={pieData} size={140} /> : <p className="text-caption text-text-tertiary py-8 text-center">No breakdown data available</p>}
           </CardBody>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Technical Debt</CardTitle></CardHeader>
-          <CardBody className="flex flex-col gap-4">
-            {[
-              { label: 'Code Smells', value: 156, max: 300 },
-              { label: 'Duplications', value: 42, max: 100 },
-              { label: 'Complexity', value: 68, max: 100 },
-              { label: 'Coverage Gaps', value: 24, max: 100 },
-            ].map((t, i) => (
-              <div key={i}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-2xs text-text-tertiary">{t.label}</span>
-                  <span className="text-2xs font-medium text-text-primary">{t.value}</span>
-                </div>
-                <Progress value={(t.value / t.max) * 100} size="xs" tone={t.value / t.max > 0.6 ? 'danger' : t.value / t.max > 0.3 ? 'warning' : 'success'} />
-              </div>
-            ))}
+          <CardHeader><CardTitle>Workspace Summary</CardTitle></CardHeader>
+          <CardBody className="flex flex-col gap-4 justify-center">
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border-subtle">
+              <span className="text-2xs text-text-tertiary">Projects</span>
+              <span className="text-body font-semibold text-text-primary">{analytics?.projectCount ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border-subtle">
+              <span className="text-2xs text-text-tertiary">Members</span>
+              <span className="text-body font-semibold text-text-primary">{analytics?.memberCount ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border-subtle">
+              <span className="text-2xs text-text-tertiary">Documents</span>
+              <span className="text-body font-semibold text-text-primary">{analytics?.documents?.documentCount ?? 0}</span>
+            </div>
           </CardBody>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Department Health</CardTitle>
-        </CardHeader>
-        <CardBody>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center h-20 w-20 rounded-full border-4 border-accent-500">
-              <span className="text-display font-bold text-accent-600">79%</span>
-            </div>
-            <div className="flex-1 space-y-2">
-              {[
-                { label: 'Code Quality', value: 88, max: 100 },
-                { label: 'Test Coverage', value: 76, max: 100 },
-                { label: 'Deployment Frequency', value: 70, max: 100 },
-                { label: 'MTTR', value: 82, max: 100 },
-              ].map((m, i) => (
-                <div key={i}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-2xs text-text-tertiary">{m.label}</span>
-                    <span className="text-2xs font-medium text-text-primary">{m.value}/{m.max}</span>
-                  </div>
-                  <Progress value={(m.value / m.max) * 100} size="sm"
-                    tone={(m.value / m.max) >= 0.8 ? 'success' : (m.value / m.max) >= 0.5 ? 'warning' : 'danger'} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardBody>
-      </Card>
     </div>
   );
 }

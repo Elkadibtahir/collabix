@@ -2,10 +2,12 @@ package com.trio.backend.service;
 
 import com.trio.backend.dto.organisation.handover.CreateHandoverEntryRequest;
 import com.trio.backend.dto.organisation.handover.HandoverEntryResponse;
+import com.trio.backend.dto.organisation.handover.HandoverStatusUpdateRequest;
 import com.trio.backend.dto.organisation.handover.UpdateHandoverEntryRequest;
 import com.trio.backend.entity.*;
-import com.trio.backend.entity.ids.WorkspaceMemberId;
+import com.trio.backend.entity.HandoverEntry.HandoverStatus;
 import com.trio.backend.enums.*;
+import com.trio.backend.exception.BadRequestException;
 import com.trio.backend.exception.ForbiddenException;
 import com.trio.backend.exception.ResourceNotFoundException;
 import com.trio.backend.mapper.HandoverEntryMapper;
@@ -13,9 +15,6 @@ import com.trio.backend.repository.HandoverEntryRepository;
 import com.trio.backend.repository.ProjectRepository;
 import com.trio.backend.repository.TaskRepository;
 import com.trio.backend.repository.UserRepository;
-import com.trio.backend.repository.WorkspaceMemberRepository;
-import com.trio.backend.repository.WorkspaceRepository;
-import com.trio.backend.security.user.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,8 +24,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
@@ -35,7 +32,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,20 +47,18 @@ class HandoverEntryServiceImplTest {
     @Mock
     private UserRepository userRepository;
     @Mock
-    private WorkspaceMemberRepository workspaceMemberRepository;
-    @Mock
-    private WorkspaceRepository workspaceRepository;
-    @Mock
     private HandoverEntryMapper handoverEntryMapper;
+    @Mock
+    private HandoverSupport support;
 
     @InjectMocks
     private HandoverEntryServiceImpl handoverEntryService;
 
     private User actor;
+    private User receiver;
     private Workspace workspace;
     private Department department;
     private Project project;
-    private WorkspaceMember workspaceMember;
     private HandoverEntry exampleEntry;
     private HandoverEntryResponse exampleResponse;
     private UUID wsId;
@@ -71,11 +66,12 @@ class HandoverEntryServiceImplTest {
     private UUID projId;
     private UUID entryId;
     private UUID userId;
+    private UUID receiverId;
 
     @BeforeEach
     void setUp() {
-        SecurityContextHolder.clearContext();
         userId = UUID.randomUUID();
+        receiverId = UUID.randomUUID();
         wsId = UUID.randomUUID();
         deptId = UUID.randomUUID();
         projId = UUID.randomUUID();
@@ -90,6 +86,16 @@ class HandoverEntryServiceImplTest {
                 .status(UserStatus.ACTIVE)
                 .build();
         ReflectionTestUtils.setField(actor, "id", userId);
+
+        receiver = User.builder()
+                .email("receiver@example.com")
+                .password("secret")
+                .firstName("Rece")
+                .lastName("iver")
+                .memberType(MemberType.EMPLOYEE)
+                .status(UserStatus.ACTIVE)
+                .build();
+        ReflectionTestUtils.setField(receiver, "id", receiverId);
 
         workspace = Workspace.builder()
                 .name("TestWorkspace")
@@ -112,93 +118,93 @@ class HandoverEntryServiceImplTest {
                 .build();
         ReflectionTestUtils.setField(project, "id", projId);
 
-        workspaceMember = WorkspaceMember.builder()
-                .workspaceMemberId(new WorkspaceMemberId(wsId, userId))
-                .workspace(workspace)
-                .user(actor)
-                .role(WorkspaceRole.MEMBER)
-                .status(WorkspaceMemberStatus.ACTIVE)
-                .joinedAt(Instant.now())
-                .build();
-
         exampleEntry = HandoverEntry.builder()
                 .workspace(workspace)
                 .department(department)
                 .project(project)
-                .user(actor)
-                .workFinished("Finished work")
-                .workRemaining("Remaining work")
-                .difficulties("None")
-                .blockers("None")
-                .importantInformation("All good")
-                .priorities("High")
-                .timeSpentMinutes(480L)
-                .needHelp(false)
-                .shift(HandoverEntry.Shift.MORNING)
-                .status(HandoverEntry.HandoverEntryStatus.ACTIVE)
+                .sender(actor)
+                .receiver(receiver)
+                .title("Handover title")
+                .content("Handover content")
+                .priority(HandoverEntry.Priority.MEDIUM)
+                .status(HandoverStatus.DRAFT)
                 .build();
         ReflectionTestUtils.setField(exampleEntry, "id", entryId);
 
         exampleResponse = new HandoverEntryResponse();
 
-        lenient().when(workspaceMemberRepository
-                        .findByWorkspaceMemberId_WorkspaceIdAndWorkspaceMemberId_UserId(wsId, userId))
-                .thenReturn(Optional.of(workspaceMember));
-
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(new CustomUserDetails(actor), null, List.of())
-        );
+        lenient().when(support.currentUserId()).thenReturn(userId);
+        lenient().when(support.userDisplayName(any())).thenReturn("Test User");
     }
 
     @Test
     void createShouldSucceed() {
         CreateHandoverEntryRequest request = new CreateHandoverEntryRequest();
-        ReflectionTestUtils.setField(request, "shift", HandoverEntry.Shift.MORNING);
+        ReflectionTestUtils.setField(request, "departmentId", deptId);
+        ReflectionTestUtils.setField(request, "projectId", projId);
+        ReflectionTestUtils.setField(request, "receiverId", receiverId);
 
         when(projectRepository.findByIdAndDepartment_Id(projId, deptId)).thenReturn(Optional.of(project));
-        when(handoverEntryMapper.toEntity(request)).thenReturn(new HandoverEntry());
+        when(userRepository.findById(receiverId)).thenReturn(Optional.of(receiver));
         when(userRepository.findById(userId)).thenReturn(Optional.of(actor));
+        when(handoverEntryMapper.toEntity(request)).thenReturn(new HandoverEntry());
         when(handoverEntryRepository.save(any(HandoverEntry.class))).thenReturn(exampleEntry);
         when(handoverEntryMapper.toResponse(exampleEntry)).thenReturn(exampleResponse);
 
-        HandoverEntryResponse result = handoverEntryService.create(wsId, deptId, projId, request);
+        HandoverEntryResponse result = handoverEntryService.create(wsId, request);
 
         assertNotNull(result);
         verify(handoverEntryRepository).save(any(HandoverEntry.class));
+        verify(support).addTimelineEvent(any(HandoverEntry.class), any(), anyString(), any(UUID.class));
     }
 
     @Test
     void createShouldThrowWhenProjectNotFound() {
+        CreateHandoverEntryRequest request = new CreateHandoverEntryRequest();
+        ReflectionTestUtils.setField(request, "departmentId", deptId);
+        ReflectionTestUtils.setField(request, "projectId", projId);
+        ReflectionTestUtils.setField(request, "receiverId", receiverId);
         when(projectRepository.findByIdAndDepartment_Id(projId, deptId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
-                () -> handoverEntryService.create(wsId, deptId, projId, new CreateHandoverEntryRequest()));
+                () -> handoverEntryService.create(wsId, request));
     }
 
     @Test
     void createShouldThrowWhenProjectInactive() {
         project.setStatus(WorkspaceStatus.ARCHIVED);
+        CreateHandoverEntryRequest request = new CreateHandoverEntryRequest();
+        ReflectionTestUtils.setField(request, "departmentId", deptId);
+        ReflectionTestUtils.setField(request, "projectId", projId);
+        ReflectionTestUtils.setField(request, "receiverId", receiverId);
         when(projectRepository.findByIdAndDepartment_Id(projId, deptId)).thenReturn(Optional.of(project));
 
         assertThrows(ResourceNotFoundException.class,
-                () -> handoverEntryService.create(wsId, deptId, projId, new CreateHandoverEntryRequest()));
+                () -> handoverEntryService.create(wsId, request));
+    }
+
+    @Test
+    void createShouldThrowWhenReceiverNotFound() {
+        CreateHandoverEntryRequest request = new CreateHandoverEntryRequest();
+        ReflectionTestUtils.setField(request, "departmentId", deptId);
+        ReflectionTestUtils.setField(request, "projectId", projId);
+        ReflectionTestUtils.setField(request, "receiverId", receiverId);
+        when(projectRepository.findByIdAndDepartment_Id(projId, deptId)).thenReturn(Optional.of(project));
+        when(userRepository.findById(receiverId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> handoverEntryService.create(wsId, request));
     }
 
     @Test
     void createShouldThrowForNonMember() {
         UUID otherUserId = UUID.randomUUID();
-        User otherUser = User.builder().firstName("Other").build();
-        ReflectionTestUtils.setField(otherUser, "id", otherUserId);
-
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(new CustomUserDetails(otherUser), null, List.of())
-        );
-        when(workspaceMemberRepository
-                        .findByWorkspaceMemberId_WorkspaceIdAndWorkspaceMemberId_UserId(wsId, otherUserId))
-                .thenReturn(Optional.empty());
+        when(support.currentUserId()).thenReturn(otherUserId);
+        doThrow(new ForbiddenException("You are not a member of this workspace."))
+                .when(support).assertActiveWorkspaceMember(eq(wsId), eq(otherUserId));
 
         assertThrows(ForbiddenException.class,
-                () -> handoverEntryService.create(wsId, deptId, projId, new CreateHandoverEntryRequest()));
+                () -> handoverEntryService.create(wsId, new CreateHandoverEntryRequest()));
     }
 
     @Test
@@ -206,7 +212,7 @@ class HandoverEntryServiceImplTest {
         when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
         when(handoverEntryMapper.toResponse(exampleEntry)).thenReturn(exampleResponse);
 
-        HandoverEntryResponse result = handoverEntryService.getById(wsId, deptId, projId, entryId);
+        HandoverEntryResponse result = handoverEntryService.getById(wsId, entryId);
 
         assertNotNull(result);
     }
@@ -216,110 +222,197 @@ class HandoverEntryServiceImplTest {
         when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
-                () -> handoverEntryService.getById(wsId, deptId, projId, entryId));
+                () -> handoverEntryService.getById(wsId, entryId));
     }
 
     @Test
     void getByIdShouldThrowWhenDeleted() {
-        exampleEntry.setStatus(HandoverEntry.HandoverEntryStatus.DELETED);
-        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
+        exampleEntry.setDeleted(true);
+        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
-                () -> handoverEntryService.getById(wsId, deptId, projId, entryId));
-    }
-
-    @Test
-    void getByIdShouldThrowWhenProjectMismatch() {
-        Project otherProject = Project.builder().build();
-        ReflectionTestUtils.setField(otherProject, "id", UUID.randomUUID());
-        exampleEntry.setProject(otherProject);
-        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> handoverEntryService.getById(wsId, deptId, projId, entryId));
+                () -> handoverEntryService.getById(wsId, entryId));
     }
 
     @Test
     void listShouldReturnPaginatedResults() {
         Page<HandoverEntry> page = new PageImpl<>(List.of(exampleEntry));
-        when(projectRepository.findByIdAndDepartment_Id(projId, deptId)).thenReturn(Optional.of(project));
-        when(handoverEntryRepository.findByProjectIdPaginated(eq(projId), any(PageRequest.class))).thenReturn(page);
+        when(handoverEntryRepository.search(eq(wsId), isNull(), isNull(), isNull(), any(PageRequest.class)))
+                .thenReturn(page);
         when(handoverEntryMapper.toResponse(exampleEntry)).thenReturn(exampleResponse);
 
-        Page<HandoverEntryResponse> result = handoverEntryService.list(wsId, deptId, projId, PageRequest.of(0, 10));
+        Page<HandoverEntryResponse> result = handoverEntryService.list(wsId, null, null, null, PageRequest.of(0, 10));
 
         assertEquals(1, result.getTotalElements());
     }
 
     @Test
-    void updateShouldSucceedForAdmin() {
-        workspaceMember.setRole(WorkspaceRole.ADMIN);
-        when(workspaceMemberRepository.existsWithRole(wsId, userId, WorkspaceRole.ADMIN)).thenReturn(true);
+    void inboxShouldReturnReceiverEntries() {
+        Page<HandoverEntry> page = new PageImpl<>(List.of(exampleEntry));
+        when(handoverEntryRepository.findInboxPaginated(eq(wsId), eq(userId), any(PageRequest.class))).thenReturn(page);
+        when(handoverEntryMapper.toResponse(exampleEntry)).thenReturn(exampleResponse);
 
+        Page<HandoverEntryResponse> result = handoverEntryService.inbox(wsId, PageRequest.of(0, 10));
+
+        assertEquals(1, result.getTotalElements());
+    }
+
+    @Test
+    void updateShouldSucceedForSender() {
         UpdateHandoverEntryRequest request = new UpdateHandoverEntryRequest();
         when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
         when(handoverEntryRepository.save(any(HandoverEntry.class))).thenReturn(exampleEntry);
         when(handoverEntryMapper.toResponse(exampleEntry)).thenReturn(exampleResponse);
 
-        HandoverEntryResponse result = handoverEntryService.update(wsId, deptId, projId, entryId, request);
+        HandoverEntryResponse result = handoverEntryService.update(wsId, entryId, request);
 
         assertNotNull(result);
         verify(handoverEntryMapper).updateHandoverEntry(request, exampleEntry);
     }
 
     @Test
-    void updateShouldSucceedForOwner() {
-        when(workspaceMemberRepository.existsWithRole(wsId, userId, WorkspaceRole.ADMIN)).thenReturn(false);
-        when(workspaceRepository.findById(wsId)).thenReturn(Optional.of(workspace));
-
-        UpdateHandoverEntryRequest request = new UpdateHandoverEntryRequest();
+    void updateShouldThrowForNonSender() {
+        User otherUser = User.builder().firstName("Other").build();
+        ReflectionTestUtils.setField(otherUser, "id", UUID.randomUUID());
+        exampleEntry.setSender(otherUser);
         when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
-        when(handoverEntryRepository.save(any(HandoverEntry.class))).thenReturn(exampleEntry);
-        when(handoverEntryMapper.toResponse(exampleEntry)).thenReturn(exampleResponse);
-
-        HandoverEntryResponse result = handoverEntryService.update(wsId, deptId, projId, entryId, request);
-
-        assertNotNull(result);
-        verify(handoverEntryMapper).updateHandoverEntry(request, exampleEntry);
-    }
-
-    @Test
-    void updateShouldThrowForNonAdmin() {
-        when(workspaceMemberRepository.existsWithRole(wsId, userId, WorkspaceRole.ADMIN)).thenReturn(false);
-        when(workspaceRepository.findById(wsId)).thenReturn(Optional.empty());
 
         assertThrows(ForbiddenException.class,
-                () -> handoverEntryService.update(wsId, deptId, projId, entryId, new UpdateHandoverEntryRequest()));
+                () -> handoverEntryService.update(wsId, entryId, new UpdateHandoverEntryRequest()));
+    }
+
+    @Test
+    void updateShouldThrowWhenNotDraftOrRejected() {
+        exampleEntry.setStatus(HandoverStatus.PENDING);
+        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
+
+        assertThrows(BadRequestException.class,
+                () -> handoverEntryService.update(wsId, entryId, new UpdateHandoverEntryRequest()));
+    }
+
+    @Test
+    void sendShouldSucceed() {
+        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
+        when(handoverEntryRepository.save(any(HandoverEntry.class))).thenReturn(exampleEntry);
+        when(handoverEntryMapper.toResponse(exampleEntry)).thenReturn(exampleResponse);
+
+        HandoverEntryResponse result = handoverEntryService.send(wsId, entryId, new HandoverStatusUpdateRequest());
+
+        assertNotNull(result);
+        assertEquals(HandoverStatus.PENDING, exampleEntry.getStatus());
+        assertNotNull(exampleEntry.getSentAt());
+        verify(support).notifyUser(eq(wsId), eq(receiverId), any(), anyString(), anyString(), eq(entryId));
+    }
+
+    @Test
+    void sendShouldThrowForNonSender() {
+        User otherUser = User.builder().firstName("Other").build();
+        ReflectionTestUtils.setField(otherUser, "id", UUID.randomUUID());
+        exampleEntry.setSender(otherUser);
+        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
+
+        assertThrows(ForbiddenException.class,
+                () -> handoverEntryService.send(wsId, entryId, new HandoverStatusUpdateRequest()));
+    }
+
+    @Test
+    void acceptShouldSucceed() {
+        when(support.currentUserId()).thenReturn(receiverId);
+        exampleEntry.setStatus(HandoverStatus.PENDING);
+        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
+        when(handoverEntryRepository.save(any(HandoverEntry.class))).thenReturn(exampleEntry);
+        when(handoverEntryMapper.toResponse(exampleEntry)).thenReturn(exampleResponse);
+
+        HandoverEntryResponse result = handoverEntryService.accept(wsId, entryId, new HandoverStatusUpdateRequest());
+
+        assertNotNull(result);
+        assertEquals(HandoverStatus.ACCEPTED, exampleEntry.getStatus());
+        assertNotNull(exampleEntry.getAcceptedAt());
+    }
+
+    @Test
+    void acceptShouldThrowForNonReceiver() {
+        User otherUser = User.builder().firstName("Other").build();
+        ReflectionTestUtils.setField(otherUser, "id", UUID.randomUUID());
+        exampleEntry.setStatus(HandoverStatus.PENDING);
+        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
+
+        assertThrows(ForbiddenException.class,
+                () -> handoverEntryService.accept(wsId, entryId, new HandoverStatusUpdateRequest()));
+    }
+
+    @Test
+    void rejectShouldSucceed() {
+        when(support.currentUserId()).thenReturn(receiverId);
+        exampleEntry.setStatus(HandoverStatus.PENDING);
+        HandoverStatusUpdateRequest request = new HandoverStatusUpdateRequest();
+        request.setReason("Not ready");
+        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
+        when(handoverEntryRepository.save(any(HandoverEntry.class))).thenReturn(exampleEntry);
+        when(handoverEntryMapper.toResponse(exampleEntry)).thenReturn(exampleResponse);
+
+        HandoverEntryResponse result = handoverEntryService.reject(wsId, entryId, request);
+
+        assertNotNull(result);
+        assertEquals(HandoverStatus.REJECTED, exampleEntry.getStatus());
+        assertNotNull(exampleEntry.getRejectedAt());
+        verify(support).addTimelineEvent(eq(exampleEntry), any(), contains("Not ready"), eq(receiverId));
+    }
+
+    @Test
+    void completeShouldSucceed() {
+        exampleEntry.setStatus(HandoverStatus.ACCEPTED);
+        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
+        when(handoverEntryRepository.save(any(HandoverEntry.class))).thenReturn(exampleEntry);
+        when(handoverEntryMapper.toResponse(exampleEntry)).thenReturn(exampleResponse);
+
+        HandoverEntryResponse result = handoverEntryService.complete(wsId, entryId, new HandoverStatusUpdateRequest());
+
+        assertNotNull(result);
+        assertEquals(HandoverStatus.COMPLETED, exampleEntry.getStatus());
+        assertNotNull(exampleEntry.getCompletedAt());
+    }
+
+    @Test
+    void completeShouldThrowWhenNotAccepted() {
+        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
+
+        assertThrows(BadRequestException.class,
+                () -> handoverEntryService.complete(wsId, entryId, new HandoverStatusUpdateRequest()));
+    }
+
+    @Test
+    void archiveShouldSucceed() {
+        when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
+        when(handoverEntryRepository.save(any(HandoverEntry.class))).thenReturn(exampleEntry);
+        when(handoverEntryMapper.toResponse(exampleEntry)).thenReturn(exampleResponse);
+
+        HandoverEntryResponse result = handoverEntryService.archive(wsId, entryId, new HandoverStatusUpdateRequest());
+
+        assertNotNull(result);
+        assertEquals(HandoverStatus.ARCHIVED, exampleEntry.getStatus());
+        assertNotNull(exampleEntry.getArchivedAt());
     }
 
     @Test
     void deleteShouldSoftDelete() {
-        when(workspaceMemberRepository.existsWithRole(wsId, userId, WorkspaceRole.ADMIN)).thenReturn(true);
         when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
 
-        handoverEntryService.delete(wsId, deptId, projId, entryId);
+        handoverEntryService.delete(wsId, entryId);
 
-        assertEquals(HandoverEntry.HandoverEntryStatus.DELETED, exampleEntry.getStatus());
+        assertTrue(exampleEntry.getDeleted());
         verify(handoverEntryRepository).save(exampleEntry);
     }
 
     @Test
-    void deleteShouldBeIdempotentWhenAlreadyDeleted() {
-        exampleEntry.setStatus(HandoverEntry.HandoverEntryStatus.DELETED);
-        when(workspaceMemberRepository.existsWithRole(wsId, userId, WorkspaceRole.ADMIN)).thenReturn(true);
+    void deleteShouldThrowWhenNotSenderOrAdmin() {
+        User otherUser = User.builder().firstName("Other").build();
+        ReflectionTestUtils.setField(otherUser, "id", UUID.randomUUID());
+        exampleEntry.setSender(otherUser);
+        when(support.isWorkspaceAdminOrOwner(wsId, userId)).thenReturn(false);
         when(handoverEntryRepository.findByIdAndWorkspace(entryId, wsId)).thenReturn(Optional.of(exampleEntry));
 
-        handoverEntryService.delete(wsId, deptId, projId, entryId);
-
-        verify(handoverEntryRepository, never()).save(any());
-    }
-
-    @Test
-    void deleteShouldThrowWhenNonAdmin() {
-        when(workspaceMemberRepository.existsWithRole(wsId, userId, WorkspaceRole.ADMIN)).thenReturn(false);
-        when(workspaceRepository.findById(wsId)).thenReturn(Optional.empty());
-
         assertThrows(ForbiddenException.class,
-                () -> handoverEntryService.delete(wsId, deptId, projId, entryId));
+                () -> handoverEntryService.delete(wsId, entryId));
     }
 }

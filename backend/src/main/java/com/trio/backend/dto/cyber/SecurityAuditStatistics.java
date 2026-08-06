@@ -14,7 +14,7 @@ public class SecurityAuditStatistics {
     private long CompletedAudits;
     private long plannedAudits;
     private long archivedAudits;
-    private double averagecompletionPercentage;
+    private double averageCompletionPercentage;
     private double averageCompletionTimeDays;
     private Map<String, Long> auditsByStatus;
     private Map<String, Long> auditsByProject;

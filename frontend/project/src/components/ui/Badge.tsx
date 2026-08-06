@@ -2,11 +2,14 @@ import { type HTMLAttributes } from 'react';
 import { cn } from '../../lib/cn';
 
 export type Tone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info';
-type Variant = 'soft' | 'solid' | 'outline';
+type Variant = 'soft' | 'solid' | 'outline' | 'ghost' | 'primary';
+
+type BadgeSize = 'xs' | 'sm' | 'md';
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: Tone;
   variant?: Variant;
+  size?: BadgeSize;
   dot?: boolean;
 }
 
@@ -46,13 +49,24 @@ const dotColor: Record<Tone, string> = {
   info: 'bg-info-500',
 };
 
-export function Badge({ tone = 'neutral', variant = 'soft', dot, className, children, ...props }: BadgeProps) {
+const sizeClasses: Record<BadgeSize, string> = {
+  xs: 'px-1.5 py-0.5 text-[10px]',
+  sm: 'px-2 py-0.5 text-2xs',
+  md: 'px-2.5 py-0.5 text-2xs',
+};
+
+export function Badge({ tone = 'neutral', variant = 'soft', size = 'md', dot, className, children, ...props }: BadgeProps) {
   const toneClass =
-    variant === 'solid' ? toneSolid[tone] : variant === 'outline' ? toneOutline[tone] : toneSoft[tone];
+    variant === 'solid' || variant === 'primary'
+      ? toneSolid[tone]
+      : variant === 'outline' || variant === 'ghost'
+      ? toneOutline[tone]
+      : toneSoft[tone];
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-2xs font-medium leading-[16px] whitespace-nowrap',
+        'inline-flex items-center gap-1.5 rounded-md text-2xs font-medium leading-[16px] whitespace-nowrap',
+        sizeClasses[size],
         toneClass,
         className,
       )}

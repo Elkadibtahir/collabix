@@ -1,4 +1,3 @@
-import { useState, useRef, useEffect } from 'react';
 import { cn } from '../../lib/cn';
 import {
   Briefcase, FolderKanban, CheckSquare, CheckCircle, FileText, FileEdit,

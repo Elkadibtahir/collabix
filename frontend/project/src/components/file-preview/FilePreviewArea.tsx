@@ -1,5 +1,4 @@
-import { FileText, Table, Image, Monitor, Headphones, FileArchive, AlertTriangle, File } from 'lucide-react';
-import { cn } from '../../lib/cn';
+import { FileText, Table, Image, Monitor, Headphones, FileArchive, AlertTriangle } from 'lucide-react';
 import { type FileType } from './FilePreviewTypes';
 
 interface FilePreviewAreaProps {

@@ -8,8 +8,8 @@ const keys = {
   stats: (wsId: string, deptId: string) => ['performance-reviews', 'stats', wsId, deptId] as const,
 };
 
-export function usePerformanceReviewsList(wsId: string, deptId: string) {
-  return useQuery({ queryKey: keys.all(wsId, deptId), queryFn: () => performanceReviewService.list(wsId, deptId), enabled: !!wsId && !!deptId });
+export function usePerformanceReviewsList(wsId: string, deptId: string, page = 0, size = 10) {
+  return useQuery({ queryKey: [...keys.all(wsId, deptId), page], queryFn: () => performanceReviewService.list(wsId, deptId, { page, size }), enabled: !!wsId && !!deptId });
 }
 
 export function usePerformanceReviewDetail(wsId: string, deptId: string, reviewId: string | undefined) {
@@ -43,4 +43,14 @@ export function useSubmitPerformanceReview(wsId: string, deptId: string) {
 export function useApprovePerformanceReview(wsId: string, deptId: string) {
   const qc = useQueryClient();
   return useMutation({ mutationFn: (id: string) => performanceReviewService.approve(wsId, deptId, id), onSuccess: () => qc.invalidateQueries({ queryKey: keys.all(wsId, deptId) }) });
+}
+
+export function useRejectPerformanceReview(wsId: string, deptId: string) {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: ({ id, reason }: { id: string; reason: string }) => performanceReviewService.reject(wsId, deptId, id, reason), onSuccess: () => qc.invalidateQueries({ queryKey: keys.all(wsId, deptId) }) });
+}
+
+export function useArchivePerformanceReview(wsId: string, deptId: string) {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (id: string) => performanceReviewService.archive(wsId, deptId, id), onSuccess: () => qc.invalidateQueries({ queryKey: keys.all(wsId, deptId) }) });
 }

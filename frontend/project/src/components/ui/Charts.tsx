@@ -116,7 +116,7 @@ export function LineChart({ data, height = 200, tone = 'accent', className }: Li
   );
 }
 
-export interface AreaChartProps extends LineChartProps {}
+export type AreaChartProps = LineChartProps;
 
 export function AreaChart(props: AreaChartProps) {
   return <LineChart {...props} />;

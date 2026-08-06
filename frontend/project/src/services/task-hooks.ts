@@ -10,13 +10,13 @@ import type {
   TaskResponse,
   CreateTaskRequest,
   UpdateTaskRequest,
+  BackendTaskStatus,
   CommentResponse,
   CreateCommentRequest,
   UpdateCommentRequest,
   AttachmentResponse,
   CreateAttachmentRequest,
   ActivityResponse,
-  CreateActivityRequest,
   ChecklistResponse,
   CreateChecklistRequest,
   UpdateChecklistRequest,
@@ -80,13 +80,26 @@ export function useCreateTask(wsId: string, deptId: string, projId: string) {
   });
 }
 
-export function useUpdateTask(wsId: string, deptId: string, projId: string, taskId: string) {
+export function useUpdateTask(wsId: string, deptId: string, projId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: UpdateTaskRequest) => taskService.update(wsId, deptId, projId, taskId, data),
-    onSuccess: () => {
+    mutationFn: ({ taskId, data }: { taskId: string; data: UpdateTaskRequest }) =>
+      taskService.update(wsId, deptId, projId, taskId, data),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: taskKeys.detail(wsId, deptId, projId, variables.taskId) });
       qc.invalidateQueries({ queryKey: taskKeys.list(wsId, deptId, projId) });
-      qc.invalidateQueries({ queryKey: taskKeys.detail(wsId, deptId, projId, taskId) });
+    },
+  });
+}
+
+export function useUpdateTaskStatus(wsId: string, deptId: string, projId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ taskId, status }: { taskId: string; status: BackendTaskStatus }) =>
+      taskService.update(wsId, deptId, projId, taskId, { status }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: taskKeys.detail(wsId, deptId, projId, variables.taskId) });
+      qc.invalidateQueries({ queryKey: taskKeys.list(wsId, deptId, projId) });
     },
   });
 }
@@ -188,7 +201,7 @@ export function useActivitiesList(wsId: string, deptId: string, projId: string, 
 }
 
 export function useChecklistsList(wsId: string, deptId: string, projId: string, taskId: string) {
-  return useQuery<ChecklistResponse[]>({
+  return useQuery<PageResponse<ChecklistResponse>>({
     queryKey: taskKeys.checklists(wsId, deptId, projId, taskId),
     queryFn: () => checklistService.list(wsId, deptId, projId, taskId),
     enabled: !!wsId && !!deptId && !!projId && !!taskId,

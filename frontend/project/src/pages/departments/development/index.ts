@@ -1,8 +1,5 @@
 export { DevelopmentDashboardTab } from './DashboardTab';
-export { DevelopmentOverviewTab } from './OverviewTab';
-export { DevelopmentManagementTab } from './ManagementTab';
-export { DevelopmentDocumentsTab } from './DocumentsTab';
-export { DevelopmentReportsTab } from './ReportsTab';
+export { DevelopmentProjectsTab } from './ProjectsTab';
+export { DevelopmentSprintsTab } from './SprintsTab';
+export { DevelopmentTasksTab } from './TasksTab';
 export { DevelopmentAnalyticsTab } from './AnalyticsTab';
-export { DevelopmentActivityTab } from './ActivityTab';
-export { DevelopmentSettingsTab } from './SettingsTab';

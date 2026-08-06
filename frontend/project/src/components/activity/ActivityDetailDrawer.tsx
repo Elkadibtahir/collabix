@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { X, ExternalLink, Calendar, Clock, User, Briefcase, Building2, FolderKanban, FileText, Tag } from 'lucide-react';
+import { X, ExternalLink, Clock, User, Briefcase, Building2, FolderKanban, FileText, Tag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/cn';
 import { IconButton } from '../ui/IconButton';

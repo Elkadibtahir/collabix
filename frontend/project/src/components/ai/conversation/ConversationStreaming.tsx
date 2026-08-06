@@ -1,5 +1,4 @@
 import { Sparkles, Square } from 'lucide-react';
-import { cn } from '../../../lib/cn';
 
 interface ConversationStreamingProps {
   visible: boolean;

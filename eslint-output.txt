@@ -1,0 +1,23 @@
+﻿
+C:\Users\SURFACE\Desktop\collabix\frontend\project\src\pages\departments\DepartmentDetailPage.tsx
+  3:154  error  'Rocket' is defined but never used  unused-imports/no-unused-imports
+
+C:\Users\SURFACE\Desktop\collabix\frontend\project\src\pages\departments\ai\DashboardTab.tsx
+  8:62  error  'modelTypeColor' is defined but never used  unused-imports/no-unused-imports
+
+C:\Users\SURFACE\Desktop\collabix\frontend\project\src\pages\departments\common\DeptOverview.tsx
+  5:89  error  'Loader2' is defined but never used  unused-imports/no-unused-imports
+
+C:\Users\SURFACE\Desktop\collabix\frontend\project\src\pages\departments\cybersecurity\DashboardTab.tsx
+  8:72  error  'Users' is defined but never used        unused-imports/no-unused-imports
+  8:88  error  'AlertCircle' is defined but never used  unused-imports/no-unused-imports
+
+C:\Users\SURFACE\Desktop\collabix\frontend\project\src\pages\departments\development\DashboardTab.tsx
+  8:52  error  'ArrowRight' is defined but never used  unused-imports/no-unused-imports
+
+C:\Users\SURFACE\Desktop\collabix\frontend\project\src\pages\departments\marketing\DashboardTab.tsx
+  9:54  error  'ArrowRight' is defined but never used  unused-imports/no-unused-imports
+
+Ô£û 7 problems (7 errors, 0 warnings)
+  7 errors and 0 warnings potentially fixable with the `--fix` option.
+

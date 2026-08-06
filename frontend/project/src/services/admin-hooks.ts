@@ -26,8 +26,8 @@ const adminKeys = {
 
 function useEffectiveWorkspaceId(): string {
   const wsFromUrl = useWorkspaceId();
-  if (wsFromUrl) return wsFromUrl;
   const { data: workspaces } = useWorkspacesList();
+  if (wsFromUrl) return wsFromUrl;
   if (workspaces && workspaces.length > 0) {
     return workspaces[0].id;
   }

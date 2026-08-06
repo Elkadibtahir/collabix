@@ -2,9 +2,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 
 export interface DropdownItem {
+  id?: string | number;
   label?: string;
   icon?: ReactNode;
   onClick?: () => void;
+  className?: string;
   danger?: boolean;
   disabled?: boolean;
   divider?: boolean;

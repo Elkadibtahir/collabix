@@ -86,7 +86,7 @@ public class DocumentServiceImpl implements DocumentService {
             Task task = taskRepository.findByIdAndProject_Id(request.getTaskId(), projectId)
                     .orElseThrow(() -> new ResourceNotFoundException("Task not found."));
 
-            if (task.getStatus() != TaskStatus.ACTIVE) {
+            if (task.getStatus().isTerminal()) {
                 throw new ResourceNotFoundException("Task not found.");
             }
 

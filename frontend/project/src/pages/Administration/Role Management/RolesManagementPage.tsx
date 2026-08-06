@@ -4,7 +4,6 @@ import {
   Search,
   Copy,
   Edit,
-  Archive,
   Trash2,
   MoreHorizontal,
   Users,
@@ -12,10 +11,9 @@ import {
   LayoutGrid,
   List,
 } from 'lucide-react';
-import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
+import { Card, CardBody } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { Badge } from '../../../components/ui/Badge';
 import { IconButton } from '../../../components/ui/IconButton';
 import { Dropdown, type DropdownItem } from '../../../components/ui/Dropdown';
 import { EmptyState } from '../../../components/ui/EmptyState';

@@ -9,6 +9,7 @@ import {
   Bell,
   BarChart3,
   Users,
+  User as UserIcon,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -31,8 +32,10 @@ import {
   Search,
 } from 'lucide-react';
 import { cn } from '../../lib/cn';
-import { useAuth } from '../../lib/auth-context';
+import { useAuth, type User } from '../../lib/auth-context';
 import { useUnreadCount } from '../../services/notification-hooks';
+import { isAdmin, isManager, detectDeptType, deptTypeLabel } from '../../lib/access';
+import { DEPT_TABS } from '../../pages/departments/department-tabs';
 
 export interface NavItem {
   id: string;
@@ -49,7 +52,7 @@ export interface SidebarProps {
   onNavigate: (id: string) => void;
 }
 
-const navSections: { title: string; items: NavItem[] }[] = [
+const ADMIN_NAV: { title: string; items: NavItem[] }[] = [
   {
     title: '',
     items: [{ id: 'dashboard', label: 'Dashboard', icon: <LayoutGrid /> }],
@@ -140,8 +143,118 @@ const navSections: { title: string; items: NavItem[] }[] = [
   },
 ];
 
+function applyPermissionFilters(section: { title: string; items: NavItem[] }, perms: string[]): { title: string; items: NavItem[] } | null {
+  const filteredItems = section.items
+    .map((item) => {
+      if (item.id === 'create-workspace' && !perms.includes('WORKSPACE_CREATE')) return null;
+      if (item.id === 'settings' && !perms.includes('WORKSPACE_UPDATE')) return null;
+      if (item.children) {
+        const filteredChildren = item.children.filter((child) => {
+          if (child.id === 'create-workspace' && !perms.includes('WORKSPACE_CREATE')) return false;
+          return true;
+        });
+        return { ...item, children: filteredChildren };
+      }
+      return item;
+    })
+    .filter(Boolean) as NavItem[];
+  if (filteredItems.length === 0) return null;
+  return { ...section, items: filteredItems };
+}
+
+function deptModuleItems(user: User): NavItem[] {
+  const type = detectDeptType(user.departmentName);
+  const defs = DEPT_TABS[type] ?? DEPT_TABS.generic;
+  return defs.map((tab) => ({ id: `dept-${tab.id}`, label: tab.label, icon: <tab.icon /> }));
+}
+
+const TOOL_ITEMS: NavItem[] = [
+  { id: 'projects', label: 'Projects', icon: <FolderKanban /> },
+  { id: 'tasks', label: 'My Tasks', icon: <CheckSquare /> },
+  { id: 'collaboration', label: 'Collaboration', icon: <MessageSquare /> },
+  { id: 'communication', label: 'Communication', icon: <MessageSquare /> },
+  { id: 'documents', label: 'Documents', icon: <FileText /> },
+  { id: 'knowledge', label: 'Knowledge Base', icon: <BookOpen /> },
+  { id: 'handover', label: 'Handover Journal', icon: <ScrollText /> },
+  { id: 'ai', label: 'Collabix AI', icon: <Sparkles /> },
+  { id: 'activity', label: 'Activity Center', icon: <Activity /> },
+  { id: 'notifications', label: 'Notifications', icon: <Bell /> },
+  { id: 'calendar', label: 'Calendar', icon: <CalendarDays /> },
+];
+
+const MEMBER_TOOL_ITEMS: NavItem[] = [
+  { id: 'projects', label: 'Projects', icon: <FolderKanban /> },
+  { id: 'tasks', label: 'My Tasks', icon: <CheckSquare /> },
+  { id: 'communication', label: 'Communication', icon: <MessageSquare /> },
+  { id: 'documents', label: 'Documents', icon: <FileText /> },
+  { id: 'knowledge', label: 'Knowledge Base', icon: <BookOpen /> },
+  { id: 'handover', label: 'Handover Journal', icon: <ScrollText /> },
+  { id: 'ai', label: 'Collabix AI', icon: <Sparkles /> },
+  { id: 'notifications', label: 'Notifications', icon: <Bell /> },
+  { id: 'calendar', label: 'Calendar', icon: <CalendarDays /> },
+];
+
+function buildNavSections(user: User | null, notifCount: number | undefined) {
+  const roles = user?.roles ?? [];
+  const perms = user?.permissions ?? [];
+
+  if (isAdmin(roles)) {
+    const sections = ADMIN_NAV
+      .map((s) => applyPermissionFilters(s, perms))
+      .filter(Boolean) as typeof ADMIN_NAV;
+    return applyBadge(sections, notifCount);
+  }
+
+  const dashboardId = isManager(roles) && user?.departmentId ? 'dept-dashboard' : 'dashboard';
+  const sections: { title: string; items: NavItem[] }[] = [
+    {
+      title: '',
+      items: isManager(roles) && user?.departmentId
+        ? [
+            { id: dashboardId, label: 'Department Dashboard', icon: <LayoutGrid /> },
+            { id: 'my-dashboard', label: 'Personal Dashboard', icon: <UserIcon /> },
+          ]
+        : [{ id: dashboardId, label: 'Dashboard', icon: <LayoutGrid /> }],
+    },
+  ];
+
+  if (isManager(roles) && user?.departmentId) {
+    const type = detectDeptType(user.departmentName);
+    sections.push({
+      title: user.departmentName ?? deptTypeLabel(type),
+      items: deptModuleItems(user),
+    });
+  }
+
+  sections.push({
+    title: 'My Work',
+    items: isManager(roles) ? TOOL_ITEMS : MEMBER_TOOL_ITEMS,
+  });
+
+  return applyBadge(sections, notifCount);
+}
+
+function applyBadge(
+  sections: { title: string; items: NavItem[] }[],
+  notifCount: number | undefined,
+): { title: string; items: NavItem[] }[] {
+  return sections.map((section) => ({
+    ...section,
+    items: section.items.map((item) => {
+      let badge = item.badge;
+      if (item.id === 'notifications' && notifCount !== undefined) {
+        badge = notifCount;
+      }
+      return { ...item, badge };
+    }),
+  }));
+}
+
 function isItemActive(item: NavItem, activeId: string): boolean {
   if (item.id === activeId) return true;
+  if (activeId.startsWith('dept-')) {
+    return item.children?.some((c) => c.id === 'departments') ?? false;
+  }
   return item.children?.some((c) => c.id === activeId) ?? false;
 }
 
@@ -199,7 +312,9 @@ function NavLink({
         {!collapsed && isExpanded && (
           <nav className="mt-0.5 ml-3 flex flex-col gap-0.5 border-l border-border-subtle pl-3 animate-fade-in">
             {item.children!.map((child) => {
-              const childActive = child.id === activeId;
+              const childActive =
+                child.id === activeId ||
+                (child.id === 'departments' && activeId.startsWith('dept-'));
               return (
                 <button
                   key={child.id}
@@ -281,45 +396,11 @@ function SidebarContent({
   setExpandedSections: (id: string, v: boolean) => void;
 }) {
   const { user } = useAuth();
-  const isAdmin = user?.roles?.some((r) => r === 'SUPER_ADMIN' || r === 'ADMIN');
-  const perms = user?.permissions ?? [];
   const [searchParams] = useSearchParams();
   const wsId = searchParams.get('ws') ?? '';
   const { data: notifCount } = useUnreadCount(wsId);
 
-  const visibleSections = useMemo(() => {
-    return navSections
-      .map((section) => {
-        if (section.title === 'Administration' && !isAdmin) return null;
-
-        const filteredItems = section.items
-          .map((item) => {
-            if (item.id === 'admin' && !isAdmin) return null;
-            if (item.id === 'create-workspace' && !perms.includes('WORKSPACE_CREATE')) return null;
-            if (item.id === 'settings' && !perms.includes('WORKSPACE_UPDATE')) return null;
-
-            let badge = item.badge;
-            if (item.id === 'notifications' && notifCount !== undefined) {
-              badge = notifCount;
-            }
-
-            if (item.children) {
-              const filteredChildren = item.children.filter((child) => {
-                if (child.id === 'create-workspace' && !perms.includes('WORKSPACE_CREATE')) return false;
-                return true;
-              });
-              return { ...item, children: filteredChildren, badge };
-            }
-
-            return { ...item, badge };
-          })
-          .filter(Boolean) as NavItem[];
-
-        if (filteredItems.length === 0) return null;
-        return { ...section, items: filteredItems };
-      })
-      .filter(Boolean) as typeof navSections;
-  }, [isAdmin, perms, notifCount]);
+  const visibleSections = useMemo(() => buildNavSections(user ?? null, notifCount), [user, notifCount]);
 
   return (
     <div className="flex-1 overflow-y-auto py-3 flex flex-col gap-4">

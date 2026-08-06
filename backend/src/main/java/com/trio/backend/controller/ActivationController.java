@@ -4,12 +4,12 @@ import com.trio.backend.common.ApiResponse;
 import com.trio.backend.dto.auth.CompleteActivationRequest;
 import com.trio.backend.entity.User;
 import com.trio.backend.enums.UserStatus;
+import com.trio.backend.event.AccountActivationEmailRequestedEvent;
 import com.trio.backend.exception.BadRequestException;
 import com.trio.backend.exception.ResourceNotFoundException;
 import com.trio.backend.repository.UserRepository;
 import com.trio.backend.service.AccountActivationService;
 import com.trio.backend.service.AuthService;
-import com.trio.backend.service.EmailService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -21,6 +21,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -31,8 +32,8 @@ public class ActivationController {
 
     private final AccountActivationService accountActivationService;
     private final AuthService authService;
-    private final EmailService emailService;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${app.activation.base-url:http://localhost:5173}")
     private String activationBaseUrl;
@@ -66,9 +67,12 @@ public class ActivationController {
             @RequestParam String token
     ) {
 
-        accountActivationService.activateAccount(token);
+        // Opening an activation link must not activate the account or consume the
+        // token. The frontend uses this endpoint to decide whether to show the
+        // password form; completion is performed only by POST /api/auth/activate.
+        accountActivationService.validateActivationToken(token);
 
-        return ApiResponse.success("Account activated successfully.");
+        return ApiResponse.success("Activation token is valid.");
     }
 
     /**
@@ -141,9 +145,9 @@ public class ActivationController {
 
         String activationLink = activationBaseUrl + "/activate?token=" + newToken.getToken();
 
-        emailService.sendAccountActivationEmail(user, activationLink);
+        eventPublisher.publishEvent(new AccountActivationEmailRequestedEvent(
+                this, user.getId(), activationLink));
 
         return ApiResponse.success("Activation email resent successfully.");
     }
 }
-

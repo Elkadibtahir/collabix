@@ -55,29 +55,46 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
         UUID userId = SecurityUtils.getCurrentUserId();
         Employee employee = findActiveEmployee(workspaceId, departmentId, employeeId);
 
-        if (skillRepository.existsByEmployee_IdAndSkillNameIgnoreCase(employeeId, request.getSkillName())) {
+        if (skillRepository.existsActiveByEmployee_IdAndSkillNameIgnoreCase(employeeId, request.getSkillName())) {
             throw new BadRequestException("Skill '" + request.getSkillName() + "' already exists for this employee.");
         }
 
         validateCertificationDates(request.getCertificationDate(), request.getCertificationExpiration());
 
-        EmployeeSkill skill = EmployeeSkill.builder()
-                .employee(employee)
-                .skillName(request.getSkillName())
-                .category(request.getCategory())
-                .proficiencyLevel(request.getProficiencyLevel())
-                .yearsOfExperience(request.getYearsOfExperience())
-                .lastUsedDate(request.getLastUsedDate())
-                .certificationName(request.getCertificationName())
-                .certificationIssuer(request.getCertificationIssuer())
-                .certificationDate(request.getCertificationDate())
-                .certificationExpiration(request.getCertificationExpiration())
-                .verified(false)
-                .active(true)
-                .notes(request.getNotes())
-                .build();
-
-        EmployeeSkill saved = skillRepository.save(skill);
+        EmployeeSkill saved = skillRepository.findByEmployee_IdAndSkillNameIgnoreCase(employeeId, request.getSkillName())
+                .filter(s -> !s.isActive())
+                .map(s -> {
+                    s.setActive(true);
+                    s.setCategory(request.getCategory());
+                    s.setProficiencyLevel(request.getProficiencyLevel());
+                    s.setYearsOfExperience(request.getYearsOfExperience());
+                    s.setLastUsedDate(request.getLastUsedDate());
+                    s.setCertificationName(request.getCertificationName());
+                    s.setCertificationIssuer(request.getCertificationIssuer());
+                    s.setCertificationDate(request.getCertificationDate());
+                    s.setCertificationExpiration(request.getCertificationExpiration());
+                    s.setVerified(false);
+                    s.setNotes(request.getNotes());
+                    return skillRepository.save(s);
+                })
+                .orElseGet(() -> {
+                    EmployeeSkill skill = EmployeeSkill.builder()
+                            .employee(employee)
+                            .skillName(request.getSkillName())
+                            .category(request.getCategory())
+                            .proficiencyLevel(request.getProficiencyLevel())
+                            .yearsOfExperience(request.getYearsOfExperience())
+                            .lastUsedDate(request.getLastUsedDate())
+                            .certificationName(request.getCertificationName())
+                            .certificationIssuer(request.getCertificationIssuer())
+                            .certificationDate(request.getCertificationDate())
+                            .certificationExpiration(request.getCertificationExpiration())
+                            .verified(false)
+                            .active(true)
+                            .notes(request.getNotes())
+                            .build();
+                    return skillRepository.save(skill);
+                });
         log.info("Employee skill created: {} ({}) for employee {} by user {}",
                 saved.getSkillName(), saved.getCategory(), employeeId, userId);
 
@@ -130,7 +147,7 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
         EmployeeSkill skill = findSkill(skillId, employeeId);
 
         if (request.getSkillName() != null && !request.getSkillName().equalsIgnoreCase(skill.getSkillName())) {
-            if (skillRepository.existsByEmployee_IdAndSkillNameIgnoreCaseAndIdNot(employeeId, request.getSkillName(), skillId)) {
+            if (skillRepository.existsActiveByEmployee_IdAndSkillNameIgnoreCase(employeeId, request.getSkillName())) {
                 throw new BadRequestException("Skill '" + request.getSkillName() + "' already exists for this employee.");
             }
         }
@@ -269,7 +286,7 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
         long certCount = skillRepository.countCertificationsByDepartmentId(departmentId);
         stats.setCertificationCount(certCount);
 
-        long expiring = skillRepository.countExpiringCertificationsByDepartmentId(departmentId, LocalDate.now().plusDays(30));
+        long expiring = skillRepository.countExpiringCertificationsByDepartmentId(departmentId, LocalDate.now(), LocalDate.now().plusDays(30));
         stats.setExpiringCertificationCount(expiring);
 
         List<SkillSummary> topSkills = new ArrayList<>();
@@ -286,8 +303,8 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
         }
         stats.setTopSkills(topSkills);
 
-        stats.setVerifiedCount(0);
-        stats.setUnverifiedCount(0);
+        stats.setVerifiedCount(skillRepository.countVerifiedByDepartmentId(departmentId));
+        stats.setUnverifiedCount(skillRepository.countUnverifiedByDepartmentId(departmentId));
 
         return stats;
     }
@@ -298,8 +315,9 @@ public class EmployeeSkillServiceImpl implements EmployeeSkillService {
         SecurityUtils.getCurrentUserId();
         findActiveDepartment(workspaceId, departmentId);
 
-        LocalDate cutoff = LocalDate.now().plusDays(withinDays);
-        return skillRepository.findExpiringCertificationsByDepartmentId(departmentId, cutoff)
+        LocalDate now = LocalDate.now();
+        LocalDate cutoff = now.plusDays(withinDays);
+        return skillRepository.findExpiringCertificationsByDepartmentId(departmentId, now, cutoff)
                 .stream()
                 .map(skillMapper::toResponse)
                 .collect(Collectors.toList());

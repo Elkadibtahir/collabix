@@ -2,13 +2,11 @@ import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Search,
-  Plus,
   BookOpen,
   Flame,
   Star,
   Clock,
   Eye,
-  MessageSquare,
   ArrowRight,
   ChevronRight,
   Zap,
@@ -18,14 +16,14 @@ import {
 import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { Badge } from '../../../components/ui/Badge';
+import { Badge, type Tone } from '../../../components/ui/Badge';
 import { Avatar } from '../../../components/ui/Avatar';
-import { IconButton } from '../../../components/ui/IconButton';
 import { cn } from '../../../lib/cn';
 import { useToast } from '../../../components/ui/Toast';
 import { useKnowledgeList } from '../../../services/knowledge-hooks';
+import type { KnowledgeBaseResponse } from '../../../services/knowledge-service';
 
-function mapArticle(article: any) {
+function mapArticle(article: KnowledgeBaseResponse) {
   return {
     id: article.id,
     title: article.title,
@@ -337,32 +335,33 @@ function StatWidget({
   );
 }
 
-function ArticleCard({ article }: { article: any }) {
+function ArticleCard({ article }: { article: ReturnType<typeof mapArticle> }) {
   const navigate = useNavigate();
-  const categoryColors = {
+  // Reuse a single shared mapping to avoid duplicate declarations and typing issues
+  const categoryColorsShared: Record<string, Tone> = {
     guide: 'accent',
     tutorial: 'info',
     reference: 'neutral',
     faq: 'success',
     'how-to': 'info',
     'best-practice': 'success',
-  } as const;
+  };
 
-  const difficultyColors = {
+  const difficultyColorsShared: Record<string, Tone> = {
     beginner: 'success',
     intermediate: 'warning',
     advanced: 'danger',
-  } as const;
+  };
 
   return (
     <Card className="hover:border-border-default hover:shadow-lg transition-all flex flex-col h-full">
       <CardBody className="flex-1 space-y-3">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Badge tone={categoryColors[article.category]} variant="soft">
+            <Badge tone={categoryColorsShared[article.category] ?? 'neutral'} variant="soft">
               {article.category}
             </Badge>
-            <Badge tone={difficultyColors[article.difficulty]} variant="soft">
+            <Badge tone={difficultyColorsShared[article.difficulty] ?? 'neutral'} variant="soft">
               {article.difficulty}
             </Badge>
           </div>
@@ -406,7 +405,7 @@ function ArticleCard({ article }: { article: any }) {
   );
 }
 
-function ArticleListItem({ article }: { article: any }) {
+function ArticleListItem({ article }: { article: ReturnType<typeof mapArticle> }) {
   const navigate = useNavigate();
   const categoryColors = {
     guide: 'accent',
@@ -427,7 +426,7 @@ function ArticleListItem({ article }: { article: any }) {
           <h3 className="text-body font-medium text-text-primary hover:text-accent-600">
             {article.title}
           </h3>
-          <Badge tone={categoryColors[article.category]} variant="soft">
+          <Badge tone={categoryColors[article.category as keyof typeof categoryColors] ?? 'neutral'} variant="soft">
             {article.category}
           </Badge>
         </div>

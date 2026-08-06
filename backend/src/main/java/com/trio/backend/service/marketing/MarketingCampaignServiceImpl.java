@@ -70,8 +70,8 @@ public class MarketingCampaignServiceImpl implements MarketingCampaignService {
             throw new BadRequestException("End date cannot be before start date.");
         }
 
-        if (marketingCampaignRepository.existsByProject_IdAndName(request.getProjectId(),
-                request.getName().trim().toLowerCase())) {
+        if (marketingCampaignRepository.existsByProject_IdAndNameIgnoreCase(request.getProjectId(),
+                request.getName().trim())) {
             throw new ConflictException("A campaign with this name already exists in the project.");
         }
 
@@ -278,7 +278,7 @@ public class MarketingCampaignServiceImpl implements MarketingCampaignService {
                     .average()
                     .orElse(0);
         }
-        stats.setAveragecompletionPercentage(avgPct);
+        stats.setAverageCompletionPercentage(avgPct);
 
         Map<String, Long> byStatus = new HashMap<>();
         for (Object[] row : marketingCampaignRepository.countByStatusGrouped(departmentId)) {

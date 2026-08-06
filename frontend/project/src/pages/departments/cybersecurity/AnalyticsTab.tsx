@@ -1,27 +1,23 @@
-import { Card, CardBody, CardHeader, CardTitle, SectionHeader } from '../../../components/ui/Card';
-import { Progress } from '../../../components/ui/Progress';
+import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { BarChart, LineChart, PieChart } from '../../../components/ui/Charts';
 import { Button } from '../../../components/ui/Button';
 import { useDepartmentDashboard } from '../../../services/department-hooks';
-import { TrendingUp, TrendingDown, Shield, AlertTriangle, Activity, Lock, Loader2 } from 'lucide-react';
+import { useWorkspaceAnalytics } from '../../../services/department-hooks';
+import { Shield, AlertTriangle, Activity, Lock, Loader2 } from 'lucide-react';
 
 const toneBg: Record<string, string> = {
   accent: 'bg-accent-50 text-accent-600 dark:bg-accent-100 dark:text-accent-300',
   success: 'bg-success-50 text-success-700 dark:bg-success-100 dark:text-success-500',
   warning: 'bg-warning-50 text-warning-700 dark:bg-warning-100 dark:text-warning-500',
-  info: 'bg-info-50 text-info-700 dark:bg-info-100 dark:text-info-500',
+  info: 'bg-info-50 text-info-700 dark:bg-info-100 dark:text-info-300',
 };
 
-function KpiCard({ icon, label, value, change, up, tone = 'accent' }: { icon: React.ReactNode; label: string; value: string; change?: number; up?: boolean; tone?: string }) {
+function KpiCard({ icon, label, value, tone = 'accent' }: { icon: React.ReactNode; label: string; value: string | number; tone?: string }) {
   return (
     <Card>
       <CardBody>
         <div className="flex items-start justify-between mb-2">
           <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${toneBg[tone]} [&>svg]:h-4 [&>svg]:w-4`}>{icon}</span>
-          <span className={`inline-flex items-center gap-0.5 text-2xs font-medium ${up ? 'text-success-600' : 'text-danger-600'}`}>
-            {up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-            {change}%
-          </span>
         </div>
         <p className="text-2xs font-medium uppercase tracking-wide text-text-tertiary">{label}</p>
         <p className="text-page font-semibold text-text-primary leading-tight mt-1">{value}</p>
@@ -32,8 +28,9 @@ function KpiCard({ icon, label, value, change, up, tone = 'accent' }: { icon: Re
 
 export function CybersecurityAnalyticsTab({ wsId, deptId }: { wsId: string; deptId: string }) {
   const { data: dashboard, isLoading, error, refetch } = useDepartmentDashboard(wsId, deptId);
+  const { data: analytics, isLoading: analyticsLoading, isError: analyticsError } = useWorkspaceAnalytics(wsId);
 
-  if (isLoading) {
+  if (isLoading || analyticsLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-text-tertiary" />
@@ -41,7 +38,7 @@ export function CybersecurityAnalyticsTab({ wsId, deptId }: { wsId: string; dept
     );
   }
 
-  if (error || !dashboard) {
+  if (error || !dashboard || analyticsError) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <AlertTriangle className="h-8 w-8 text-danger-500" />
@@ -57,130 +54,81 @@ export function CybersecurityAnalyticsTab({ wsId, deptId }: { wsId: string; dept
     ? Math.round(((taskSummary.totalTasks - taskSummary.activeTasks) / taskSummary.totalTasks) * 100)
     : 0;
 
+  const charts = analytics?.charts ?? [];
+  const lineChart = charts.find((c) => c.type === 'LINE');
+  const barChart = charts.find((c) => c.type === 'BAR');
+  const pieChart = charts.find((c) => c.type === 'PIE' || c.type === 'DONUT');
+
+  const lineData = lineChart?.series?.[0]?.points?.map((p) => ({ label: p.label ?? p.category ?? '', value: p.value })) ?? [];
+  const barData = barChart?.series?.[0]?.points?.map((p) => ({ label: p.label ?? p.category ?? '', value: p.value })) ?? [];
+  const pieData = pieChart?.series?.[0]?.points?.map((p) => ({ label: p.label ?? p.category ?? '', value: p.value, tone: 'accent' as const })) ?? [];
+
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-4">
-        <KpiCard icon={<Shield />} label="Security Score" value={String(completionPct)} change={4} up tone="success" />
-        <KpiCard icon={<AlertTriangle />} label="Active Tasks" value={String(taskSummary.activeTasks)} change={18} up tone="info" />
-        <KpiCard icon={<Activity />} label="Active Projects" value={String(overview.activeProjects)} change={12} up tone="accent" />
-        <KpiCard icon={<Lock />} label="Team Size" value={String(overview.activeMembers)} change={3} up tone="warning" />
+        <KpiCard icon={<Shield />} label="Security Score" value={String(completionPct)} tone="success" />
+        <KpiCard icon={<AlertTriangle />} label="Active Tasks" value={String(taskSummary.activeTasks)} tone="info" />
+        <KpiCard icon={<Activity />} label="Active Projects" value={String(overview.activeProjects)} tone="accent" />
+        <KpiCard icon={<Lock />} label="Team Size" value={String(overview.activeMembers)} tone="warning" />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader><CardTitle>Threat Trends</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{lineChart?.title ?? 'Trend'}</CardTitle></CardHeader>
           <CardBody>
-            <LineChart
-              data={[
-                { label: 'Jan', value: 185 },
-                { label: 'Feb', value: 220 },
-                { label: 'Mar', value: 195 },
-                { label: 'Apr', value: 310 },
-                { label: 'May', value: 280 },
-                { label: 'Jun', value: 350 },
-              ]}
-              height={200}
-              tone="danger"
-            />
+            {lineData.length > 0 ? <LineChart data={lineData} height={200} tone="danger" /> : <p className="text-caption text-text-tertiary py-8 text-center">No trend data available</p>}
           </CardBody>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Incident Statistics</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{barChart?.title ?? 'Distribution'}</CardTitle></CardHeader>
           <CardBody>
-            <BarChart
-              data={[
-                { label: 'Critical', value: 3 },
-                { label: 'High', value: 7 },
-                { label: 'Medium', value: 12 },
-                { label: 'Low', value: 8 },
-              ]}
-              height={200}
-              tone="warning"
-            />
+            {barData.length > 0 ? <BarChart data={barData} height={200} tone="warning" /> : <p className="text-caption text-text-tertiary py-8 text-center">No distribution data available</p>}
           </CardBody>
         </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card>
-          <CardHeader><CardTitle>Compliance Progress</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Task Health</CardTitle></CardHeader>
           <CardBody>
             <BarChart
               data={[
-                { label: 'SOC 2', value: 92 },
-                { label: 'ISO', value: 65 },
-                { label: 'GDPR', value: 88 },
-                { label: 'HIPAA', value: 72 },
+                { label: 'Active', value: taskSummary.activeTasks },
+                { label: 'Overdue', value: taskSummary.overdueTasks },
+                { label: 'Archived', value: taskSummary.archivedTasks },
               ]}
               height={160}
-              tone="success"
+              tone="info"
             />
           </CardBody>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Risk Evolution</CardTitle></CardHeader>
+          <CardHeader><CardTitle>{pieChart?.title ?? 'Breakdown'}</CardTitle></CardHeader>
           <CardBody>
-            <LineChart
-              data={[
-                { label: 'Q1', value: 72 },
-                { label: 'Q2', value: 78 },
-                { label: 'Q3', value: 86 },
-                { label: 'Q4', value: 82 },
-              ]}
-              height={160}
-              tone="accent"
-            />
+            {pieData.length > 0 ? <PieChart data={pieData} size={140} /> : <p className="text-caption text-text-tertiary py-8 text-center">No breakdown data available</p>}
           </CardBody>
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Attack Vectors</CardTitle></CardHeader>
-          <CardBody>
-            <PieChart
-              data={[
-                { label: 'Malware', value: 35, tone: 'danger' },
-                { label: 'Phishing', value: 28, tone: 'warning' },
-                { label: 'Brute Force', value: 18, tone: 'accent' },
-                { label: 'DDoS', value: 12, tone: 'info' },
-                { label: 'Other', value: 7, tone: 'neutral' },
-              ]}
-              size={120}
-            />
+          <CardHeader><CardTitle>Activity Summary</CardTitle></CardHeader>
+          <CardBody className="flex flex-col gap-4 justify-center">
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border-subtle">
+              <span className="text-2xs text-text-tertiary">Total Activity</span>
+              <span className="text-body font-semibold text-text-primary">{analytics?.activities?.totalCount ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border-subtle">
+              <span className="text-2xs text-text-tertiary">Documents</span>
+              <span className="text-body font-semibold text-text-primary">{analytics?.documents?.documentCount ?? 0}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border-subtle">
+              <span className="text-2xs text-text-tertiary">Members</span>
+              <span className="text-body font-semibold text-text-primary">{analytics?.memberCount ?? 0}</span>
+            </div>
           </CardBody>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Department Health</CardTitle>
-        </CardHeader>
-        <CardBody>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center justify-center h-20 w-20 rounded-full border-4 border-success-500">
-              <span className="text-display font-bold text-success-600">84%</span>
-            </div>
-            <div className="flex-1 space-y-2">
-              {[
-                { label: 'Threat Detection', value: 95, max: 100 },
-                { label: 'Incident Response', value: 82, max: 100 },
-                { label: 'Patch Management', value: 70, max: 100 },
-                { label: 'User Compliance', value: 88, max: 100 },
-              ].map((m, i) => (
-                <div key={i}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-2xs text-text-tertiary">{m.label}</span>
-                    <span className="text-2xs font-medium text-text-primary">{m.value}/{m.max}</span>
-                  </div>
-                  <Progress value={(m.value / m.max) * 100} size="sm"
-                    tone={(m.value / m.max) >= 0.8 ? 'success' : (m.value / m.max) >= 0.5 ? 'warning' : 'danger'} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardBody>
-      </Card>
     </div>
   );
 }

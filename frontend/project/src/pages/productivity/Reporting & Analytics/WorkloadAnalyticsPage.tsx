@@ -2,14 +2,10 @@ import { useState } from 'react';
 import {
   ArrowLeft,
   AlertCircle,
-  Users,
   BarChart3,
-  ChevronDown,
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
-import { Dropdown } from '../../../components/ui/Dropdown';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { workloadMetrics } from './analytics-data';
 

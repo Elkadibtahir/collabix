@@ -5,7 +5,6 @@ import {
   Send,
   X,
   CheckCircle2,
-  ChevronRight,
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -14,7 +13,7 @@ import { Textarea } from '../../../components/ui/Textarea';
 import { Select } from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
 import { Badge } from '../../../components/ui/Badge';
-import type { ReportBuilderState } from './report-types';
+import type { ReportBuilderState, ReportType } from './report-types';
 
 export function ReportBuilderPage({ onBack, onGenerate }: { onBack?: () => void; onGenerate?: () => void }) {
   const [showSuccess, setShowSuccess] = useState(false);
@@ -131,7 +130,7 @@ export function ReportBuilderPage({ onBack, onGenerate }: { onBack?: () => void;
                 </label>
                 <Select
                   value={formData.type}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value as any }))}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value as ReportType }))}
                 >
                   <option value="workspace">Workspace Report</option>
                   <option value="department">Department Report</option>

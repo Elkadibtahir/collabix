@@ -1,8 +1,8 @@
 package com.trio.backend.repository;
 
 import com.trio.backend.entity.HandoverEntry;
-import com.trio.backend.entity.HandoverEntry.HandoverEntryStatus;
-import com.trio.backend.entity.HandoverEntry.Shift;
+import com.trio.backend.entity.HandoverEntry.HandoverStatus;
+import com.trio.backend.entity.HandoverEntry.Priority;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,20 +10,20 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Repository for HandoverEntry entity.
+ * Repository for the HandoverEntry entity (workflow model).
  *
  * <p>Conventions:</p>
  * <ul>
- *     <li>All queries filter by ACTIVE status by default.</li>
- *     <li>Workspace scope is validated through the entity chain: HandoverEntry -> Project/Department -> Workspace.</li>
- *     <li>Pagination is applied for list operations to ensure performance.</li>
- *     <li>Methods are designed to support future Gemini automation for HandoverJournal generation.</li>
+ *     <li>All queries exclude soft-deleted entries by default.</li>
+ *     <li>Workspace scope is validated through the entity chain.</li>
+ *     <li>Pagination is applied for list operations.</li>
  * </ul>
  */
 @Repository
@@ -31,17 +31,14 @@ public interface HandoverEntryRepository extends JpaRepository<HandoverEntry, UU
 
     // ==================== CRUD (scoped) ====================
 
-    /**
-     * Find a handover entry by ID within a specific workspace.
-     */
     @Query("""
             SELECT he FROM HandoverEntry he
-            WHERE he.id = :handoverEntryId
-              AND he.status = 'ACTIVE'
+            WHERE he.id = :id
               AND he.workspace.id = :workspaceId
+              AND he.deleted = false
             """)
     Optional<HandoverEntry> findByIdAndWorkspace(
-            @Param("handoverEntryId") UUID handoverEntryId,
+            @Param("id") UUID id,
             @Param("workspaceId") UUID workspaceId
     );
 
@@ -50,312 +47,190 @@ public interface HandoverEntryRepository extends JpaRepository<HandoverEntry, UU
     @Query("""
             SELECT he FROM HandoverEntry he
             WHERE he.workspace.id = :workspaceId
-              AND he.status = 'ACTIVE'
-            ORDER BY he.passedAt DESC
+              AND he.deleted = false
+            ORDER BY he.updatedAt DESC
             """)
-    Page<HandoverEntry> findByWorkspaceIdPaginated(
+    Page<HandoverEntry> findByWorkspacePaginated(
             @Param("workspaceId") UUID workspaceId,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT he FROM HandoverEntry he
+            WHERE he.workspace.id = :workspaceId
+              AND he.status = :status
+              AND he.deleted = false
+            ORDER BY he.updatedAt DESC
+            """)
+    Page<HandoverEntry> findByWorkspaceAndStatusPaginated(
+            @Param("workspaceId") UUID workspaceId,
+            @Param("status") HandoverStatus status,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT he FROM HandoverEntry he
+            WHERE he.workspace.id = :workspaceId
+              AND he.status IN :statuses
+              AND he.deleted = false
+            ORDER BY he.updatedAt DESC
+            """)
+    Page<HandoverEntry> findByWorkspaceAndStatusInPaginated(
+            @Param("workspaceId") UUID workspaceId,
+            @Param("statuses") List<HandoverStatus> statuses,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT he FROM HandoverEntry he
+            WHERE he.workspace.id = :workspaceId
+              AND he.priority = :priority
+              AND he.deleted = false
+            ORDER BY he.updatedAt DESC
+            """)
+    Page<HandoverEntry> findByWorkspaceAndPriorityPaginated(
+            @Param("workspaceId") UUID workspaceId,
+            @Param("priority") Priority priority,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT he FROM HandoverEntry he
+            WHERE he.workspace.id = :workspaceId
+              AND he.project.id = :projectId
+              AND he.deleted = false
+            ORDER BY he.updatedAt DESC
+            """)
+    Page<HandoverEntry> findByWorkspaceAndProjectPaginated(
+            @Param("workspaceId") UUID workspaceId,
+            @Param("projectId") UUID projectId,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT he FROM HandoverEntry he
+            WHERE he.workspace.id = :workspaceId
+              AND (:status IS NULL OR he.status = :status)
+              AND (:priority IS NULL OR he.priority = :priority)
+              AND (:projectId IS NULL OR he.project.id = :projectId)
+              AND he.deleted = false
+            ORDER BY he.updatedAt DESC
+            """)
+    Page<HandoverEntry> search(
+            @Param("workspaceId") UUID workspaceId,
+            @Param("status") HandoverStatus status,
+            @Param("priority") Priority priority,
+            @Param("projectId") UUID projectId,
             Pageable pageable
     );
 
     @Query("""
             SELECT COUNT(he) FROM HandoverEntry he
             WHERE he.workspace.id = :workspaceId
-              AND he.status = 'ACTIVE'
+              AND he.deleted = false
             """)
     long countByWorkspace(@Param("workspaceId") UUID workspaceId);
 
-    // ==================== FIND BY DEPARTMENT ====================
+    // ==================== INBOX / SENT ====================
 
     @Query("""
             SELECT he FROM HandoverEntry he
-            WHERE he.department.id = :departmentId
-              AND he.status = 'ACTIVE'
-            ORDER BY he.passedAt DESC
+            WHERE he.workspace.id = :workspaceId
+              AND he.receiver.id = :userId
+              AND he.status <> 'DRAFT'
+              AND he.deleted = false
+            ORDER BY he.updatedAt DESC
             """)
-    Page<HandoverEntry> findByDepartmentIdPaginated(
-            @Param("departmentId") UUID departmentId,
+    Page<HandoverEntry> findInboxPaginated(
+            @Param("workspaceId") UUID workspaceId,
+            @Param("userId") UUID userId,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT he FROM HandoverEntry he
+            WHERE he.workspace.id = :workspaceId
+              AND he.sender.id = :userId
+              AND he.deleted = false
+            ORDER BY he.updatedAt DESC
+            """)
+    Page<HandoverEntry> findSentPaginated(
+            @Param("workspaceId") UUID workspaceId,
+            @Param("userId") UUID userId,
             Pageable pageable
     );
 
     @Query("""
             SELECT COUNT(he) FROM HandoverEntry he
-            WHERE he.department.id = :departmentId
-              AND he.status = 'ACTIVE'
+            WHERE he.workspace.id = :workspaceId
+              AND he.receiver.id = :userId
+              AND he.status = 'PENDING'
+              AND he.deleted = false
             """)
-    long countByDepartmentId(@Param("departmentId") UUID departmentId);
+    long countPendingForReceiver(
+            @Param("workspaceId") UUID workspaceId,
+            @Param("userId") UUID userId
+    );
 
-    // ==================== FIND BY PROJECT ====================
+    // ==================== JOURNAL AGGREGATION ====================
 
     @Query("""
             SELECT he FROM HandoverEntry he
             WHERE he.project.id = :projectId
-              AND he.status = 'ACTIVE'
-            ORDER BY he.passedAt DESC
+              AND he.createdAt >= :from
+              AND he.createdAt <= :to
+              AND he.deleted = false
+            ORDER BY he.createdAt DESC
             """)
-    Page<HandoverEntry> findByProjectIdPaginated(
+    List<HandoverEntry> findByProjectIdAndCreatedAtBetween(
             @Param("projectId") UUID projectId,
-            Pageable pageable
+            @Param("from") Instant from,
+            @Param("to") Instant to
     );
 
-    @Query("""
-            SELECT COUNT(he) FROM HandoverEntry he
-            WHERE he.project.id = :projectId
-              AND he.status = 'ACTIVE'
-            """)
-    long countByProjectId(@Param("projectId") UUID projectId);
-
-    // ==================== FIND BY USER ====================
-
-    @Query("""
-            SELECT he FROM HandoverEntry he
-            WHERE he.user.id = :userId
-              AND he.status = 'ACTIVE'
-            ORDER BY he.passedAt DESC
-            """)
-    Page<HandoverEntry> findByUserIdPaginated(
-            @Param("userId") UUID userId,
-            Pageable pageable
-    );
-
-    @Query("""
-            SELECT COUNT(he) FROM HandoverEntry he
-            WHERE he.user.id = :userId
-              AND he.status = 'ACTIVE'
-            """)
-    long countByUserId(@Param("userId") UUID userId);
-
-    /**
-     * Count active handover ensortes by a set of users in a workspace.
-     */
-    @Query("""
-            SELECT COUNT(he) FROM HandoverEntry he
-            WHERE he.user.id IN :userIds
-              AND he.workspace.id = :workspaceId
-              AND he.status = 'ACTIVE'
-            """)
-    long countByUserIdInAndWorkspaceId(
-            @Param("userIds") List<UUID> userIds,
-            @Param("workspaceId") UUID workspaceId
-    );
-
-    // ==================== FIND BY SHIFT ====================
-
-    @Query("""
-            SELECT he FROM HandoverEntry he
-            WHERE he.workspace.id = :workspaceId
-              AND he.shift = :shift
-              AND he.status = 'ACTIVE'
-            ORDER BY he.passedAt DESC
-            """)
-    Page<HandoverEntry> findByWorkspaceAndShiftPaginated(
-            @Param("workspaceId") UUID workspaceId,
-            @Param("shift") Shift shift,
-            Pageable pageable
-    );
-
-    @Query("""
-            SELECT COUNT(he) FROM HandoverEntry he
-            WHERE he.workspace.id = :workspaceId
-              AND he.shift = :shift
-              AND he.status = 'ACTIVE'
-            """)
-    long countByWorkspaceAndShift(
-            @Param("workspaceId") UUID workspaceId,
-            @Param("shift") Shift shift
-    );
-
-    // ==================== FIND BY DATE ====================
-
-    @Query("""
-            SELECT he FROM HandoverEntry he
-            WHERE he.workspace.id = :workspaceId
-              AND he.passedAt >= :from
-              AND he.passedAt <= :to
-              AND he.status = 'ACTIVE'
-            ORDER BY he.passedAt DESC
-            """)
-    Page<HandoverEntry> findByWorkspaceAndPassedAtBetweenPaginated(
-            @Param("workspaceId") UUID workspaceId,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to,
-            Pageable pageable
-    );
-
-    @Query("""
-            SELECT COUNT(he) FROM HandoverEntry he
-            WHERE he.workspace.id = :workspaceId
-              AND he.passedAt >= :from
-              AND he.passedAt <= :to
-              AND he.status = 'ACTIVE'
-            """)
-    long countByWorkspaceAndPassedAtBetween(
-            @Param("workspaceId") UUID workspaceId,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to
-    );
-
-    // ==================== DASHBOARD-SPECIFIC QUERIES ====================
-
-    /**
-     * Resorteves the handover ensortes of a user in a workspace for a period given.
-     */
-    @Query("""
-            SELECT he FROM HandoverEntry he
-            WHERE he.user.id = :userId
-              AND he.workspace.id = :workspaceId
-              AND he.passedAt >= :from
-              AND he.passedAt <= :to
-              AND he.status = 'ACTIVE'
-            ORDER BY he.passedAt DESC
-            """)
-    List<HandoverEntry> findByUserIdAndWorkspaceAndPassedAtBetween(
-            @Param("userId") UUID userId,
-            @Param("workspaceId") UUID workspaceId,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to
-    );
-
-    /**
-     * Resorteves the handover ensortes of a department for a period given.
-     */
-    @Query("""
-            SELECT he FROM HandoverEntry he
-            WHERE he.department.id = :departmentId
-              AND he.passedAt >= :from
-              AND he.passedAt <= :to
-              AND he.status = 'ACTIVE'
-            ORDER BY he.passedAt DESC
-            """)
-    List<HandoverEntry> findByDepartmentIdAndPassedAtBetween(
-            @Param("departmentId") UUID departmentId,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to
-    );
-
-    /**
-     * Resorteves the handover ensortes of a project for a period given.
-     */
     @Query("""
             SELECT he FROM HandoverEntry he
             WHERE he.project.id = :projectId
-              AND he.passedAt >= :from
-              AND he.passedAt <= :to
-              AND he.status = 'ACTIVE'
-            ORDER BY he.passedAt DESC
+              AND he.updatedAt >= :from
+              AND he.updatedAt <= :to
+              AND he.deleted = false
+            ORDER BY he.updatedAt DESC
             """)
-    List<HandoverEntry> findByProjectIdAndPassedAtBetween(
+    List<HandoverEntry> findByProjectIdAndUpdatedAtBetween(
             @Param("projectId") UUID projectId,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to
+            @Param("from") Instant from,
+            @Param("to") Instant to
     );
 
-// ==================== DASHBOARD-SPECIFIC QUERIES ====================
+    // ==================== DASHBOARD / REMINDERS ====================
 
-    /**
-     * Resorteves the handover ensortes of a user in a workspace for a period given,
-     * with loading of the project associÃ©.
-     *
-     * <p>Utilise {@code JOIN FETCH} to avoid le N+1 sur {@code handoverEntry.project}
-     * lors du mapping vers les widgets du dashboard personnel.</p>
-     */
     @Query("""
             SELECT he FROM HandoverEntry he
-            JOIN FETCH he.project
-            WHERE he.user.id = :userId
-              AND he.workspace.id = :workspaceId
-              AND he.passedAt >= :from
-              AND he.passedAt <= :to
-              AND he.status = 'ACTIVE'
-            ORDER BY he.passedAt DESC
+            WHERE he.workspace.id = :workspaceId
+              AND (he.sender.id = :userId OR he.receiver.id = :userId)
+              AND he.createdAt >= :from
+              AND he.createdAt <= :to
+              AND he.deleted = false
+            ORDER BY he.createdAt DESC
             """)
-    List<HandoverEntry> findByUserIdAndWorkspaceAndPassedAtBetweenWithProject(
+    List<HandoverEntry> findForUserBetween(
+            @Param("workspaceId") UUID workspaceId,
             @Param("userId") UUID userId,
-            @Param("workspaceId") UUID workspaceId,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to
+            @Param("from") Instant from,
+            @Param("to") Instant to
     );
 
-    // ==================== GEMINI / HandoverJournal PREP ====================
-
-    /**
-     * Fetch ACTIVE handover ensortes for a workspace in a time window.
-     * Used as input for Gemini to generate future HandoverJournal.
-     */
     @Query("""
             SELECT he FROM HandoverEntry he
             WHERE he.workspace.id = :workspaceId
-              AND he.status = 'ACTIVE'
-              AND he.passedAt >= :from
-              AND he.passedAt <= :to
-            ORDER BY he.user.id ASC, he.passedAt DESC
+              AND he.status = 'PENDING'
+              AND he.dueDate IS NOT NULL
+              AND he.dueDate <= :soon
+              AND he.deleted = false
+            ORDER BY he.dueDate ASC
             """)
-    Page<HandoverEntry> findGeminiInputsByWorkspaceBetweenPaginated(
+    List<HandoverEntry> findPendingDueBefore(
             @Param("workspaceId") UUID workspaceId,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to,
-            Pageable pageable
-    );
-
-    @Query("""
-            SELECT COUNT(he) FROM HandoverEntry he
-            WHERE he.workspace.id = :workspaceId
-              AND he.status = 'ACTIVE'
-              AND he.passedAt >= :from
-              AND he.passedAt <= :to
-            """)
-    long countGeminiInputsByWorkspaceBetween(
-            @Param("workspaceId") UUID workspaceId,
-            @Param("from") LocalDateTime from,
-            @Param("to") LocalDateTime to
-    );
-
-    /**
-     * Fetch ACTIVE handover ensortes in a workspace that are ready for AI summary / RAG.
-     * (aiProcessed = false indicates not yet summarized.)
-     */
-    @Query("""
-            SELECT he FROM HandoverEntry he
-            WHERE he.workspace.id = :workspaceId
-              AND he.status = 'ACTIVE'
-              AND he.aiProcessed = false
-            ORDER BY he.passedAt ASC
-            """)
-    Page<HandoverEntry> findUnprocessedByAiPaginated(
-            @Param("workspaceId") UUID workspaceId,
-            Pageable pageable
-    );
-
-    @Query("""
-            SELECT COUNT(he) FROM HandoverEntry he
-            WHERE he.workspace.id = :workspaceId
-              AND he.status = 'ACTIVE'
-              AND he.aiProcessed = false
-            """)
-    long countUnprocessedByAi(@Param("workspaceId") UUID workspaceId);
-
-    // ==================== SOFT DELETE (status updates) ====================
-
-    @Query("""
-            UPDATE HandoverEntry he
-            SET he.status = 'DELETED'
-            WHERE he.id = :handoverEntryId
-              AND he.workspace.id = :workspaceId
-            """)
-    void softDelete(
-            @Param("handoverEntryId") UUID handoverEntryId,
-            @Param("workspaceId") UUID workspaceId
-    );
-
-    @Query("""
-            UPDATE HandoverEntry he
-            SET he.status = 'ARCHIVED'
-            WHERE he.id = :handoverEntryId
-              AND he.workspace.id = :workspaceId
-            """)
-    void archive(
-            @Param("handoverEntryId") UUID handoverEntryId,
-            @Param("workspaceId") UUID workspaceId
+            @Param("soon") LocalDateTime soon
     );
 }
-

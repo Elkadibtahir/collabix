@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { useToast } from '../../components/ui/Toast';
 import {
   ArrowLeft,
-  CheckCircle2,
   AlertCircle,
   Clock,
   Users,
@@ -11,15 +10,11 @@ import {
   MoreHorizontal,
   Edit2,
   Archive,
-  Share2,
   Plus,
   Send,
-  Paperclip,
-  Smile,
   X,
   Trash2,
   ListChecks,
-  RotateCcw,
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -38,6 +33,7 @@ import { Input } from '../../components/ui/Input';
 import {
   useTaskDetail,
   useUpdateTask,
+  useUpdateTaskStatus,
   useDeleteTask,
   useCommentsList,
   useCreateComment,
@@ -56,8 +52,10 @@ import {
   mapCommentResponse,
   mapAttachmentResponse,
   mapActivityResponse,
+  mapToUpdateRequest,
+  FRONTEND_STATUS_MAP,
 } from './tasks-types';
-import type { Task, ChecklistResponse } from './tasks-types';
+import type { Task, TaskStatus, TaskPriority } from './tasks-types';
 import { TaskModal, type TaskModalKind } from './TaskModals';
 
 const statusColor: Record<string, Tone> = {
@@ -77,6 +75,25 @@ const statusLabels: Record<string, string> = {
   completed: 'Completed',
   archived: 'Archived',
 };
+
+const statusOptions: { value: TaskStatus; label: string }[] = [
+  { value: 'todo', label: statusLabels.todo },
+  { value: 'in-progress', label: statusLabels['in-progress'] },
+  { value: 'in-review', label: statusLabels['in-review'] },
+  { value: 'blocked', label: statusLabels.blocked },
+  { value: 'completed', label: statusLabels.completed },
+];
+
+const priorityOptions: { value: TaskPriority; label: string }[] = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+  { value: 'urgent', label: 'Urgent' },
+];
+
+function priorityTone(p: TaskPriority): Tone {
+  return p === 'urgent' ? 'danger' : p === 'high' ? 'warning' : p === 'medium' ? 'info' : 'success';
+}
 
 interface TaskDetailsPageProps {
   taskId: string;
@@ -101,7 +118,8 @@ export function TaskDetailsPage({ taskId, workspaceId = '', departmentId = '', p
   const { data: activitiesPage } = useActivitiesList(workspaceId, departmentId, projectId, taskId);
   const { data: checklistsData } = useChecklistsList(workspaceId, departmentId, projectId, taskId);
 
-  const updateTask = useUpdateTask(workspaceId, departmentId, projectId, taskId);
+  const updateTask = useUpdateTask(workspaceId, departmentId, projectId);
+  const updateStatus = useUpdateTaskStatus(workspaceId, departmentId, projectId);
   const deleteTask = useDeleteTask(workspaceId, departmentId, projectId);
   const createComment = useCreateComment(workspaceId, departmentId, projectId, taskId);
   const deleteComment = useDeleteComment(workspaceId, departmentId, projectId, taskId);
@@ -131,6 +149,8 @@ export function TaskDetailsPage({ taskId, workspaceId = '', departmentId = '', p
     return activitiesPage.content.map(mapActivityResponse);
   }, [activitiesPage]);
 
+  const checklists = useMemo(() => checklistsData?.content ?? [], [checklistsData]);
+
   const timelineItems: TimelineItem[] = useMemo(() => {
     return activities.map((a) => ({
       id: a.id,
@@ -142,7 +162,7 @@ export function TaskDetailsPage({ taskId, workspaceId = '', departmentId = '', p
 
   const tabItems: TabItem[] = [
     { id: 'overview', label: 'Overview' },
-    { id: 'checklist', label: 'Checklist', count: checklistsData?.length ?? 0 },
+    { id: 'checklist', label: 'Checklist', count: checklists.length },
     { id: 'activity', label: 'Activity' },
     { id: 'comments', label: 'Comments', count: comments.length },
     { id: 'attachments', label: 'Attachments', count: attachments.length },
@@ -167,7 +187,7 @@ export function TaskDetailsPage({ taskId, workspaceId = '', departmentId = '', p
   const handleAddItem = (checklistId: string) => {
     const text = newItemText[checklistId]?.trim();
     if (!text) return;
-    createItem.mutate({ checklistId, data: { title: text } }, {
+    createItem.mutate({ checklistId, data: { content: text } }, {
       onSuccess: () => { setNewItemText((prev) => ({ ...prev, [checklistId]: '' })); },
       onError: () => toast({ title: 'Failed to add item', tone: 'danger' }),
     });
@@ -178,9 +198,9 @@ export function TaskDetailsPage({ taskId, workspaceId = '', departmentId = '', p
   };
 
   const handleSaveItemTitle = (checklistId: string, itemId: string) => {
-    const text = editingItem[`${itemId}-title`]?.trim();
+    const text = editingItem[`${itemId}-content`]?.trim();
     if (!text) return;
-    updateItem.mutate({ checklistId, itemId, data: { title: text } }, {
+    updateItem.mutate({ checklistId, itemId, data: { content: text } }, {
       onSuccess: () => setEditingItem((prev) => ({ ...prev, [`${itemId}-title`]: '' })),
     });
   };
@@ -217,8 +237,8 @@ export function TaskDetailsPage({ taskId, workspaceId = '', departmentId = '', p
       <TaskModal state={modal} onClose={() => setModal(null)} onSubmit={(data) => {
         if (!modal) return;
         switch (modal.kind) {
-          case 'edit':
-            updateTask.mutate({ title: data.title, description: data.description }, {
+           case 'edit':
+            updateTask.mutate({ taskId: modal.task.id, data: { title: data.title, description: data.description } }, {
               onSuccess: () => toast({ title: 'Task updated', tone: 'success' }),
               onError: () => toast({ title: 'Failed to update task', tone: 'danger' }),
             });
@@ -250,7 +270,7 @@ export function TaskDetailsPage({ taskId, workspaceId = '', departmentId = '', p
               <Badge tone={statusColor[task.status]} variant="soft" dot>
                 {statusLabels[task.status]}
               </Badge>
-              <Badge tone={task.priority === 'urgent' ? 'danger' : task.priority === 'high' ? 'warning' : task.priority === 'medium' ? 'info' : 'success'} variant="soft">
+              <Badge tone={priorityTone(task.priority)} variant="soft">
                 {task.priority}
               </Badge>
             </div>
@@ -304,45 +324,45 @@ export function TaskDetailsPage({ taskId, workspaceId = '', departmentId = '', p
                   />
                   <Button onClick={handleAddChecklist} disabled={!newChecklistTitle.trim()} leftIcon={<Plus className="h-4 w-4" />}>Add</Button>
                 </div>
-                {(!checklistsData || checklistsData.length === 0) ? (
+                {checklists.length === 0 ? (
                   <Card><CardBody className="py-8 text-center"><p className="text-body text-text-secondary">No checklists yet. Create one above.</p></CardBody></Card>
                 ) : (
-                  checklistsData.map((cl) => (
+                  checklists.map((cl) => (
                     <Card key={cl.id}>
-                      <CardHeader className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <ListChecks className="h-4 w-4 text-text-tertiary" />
-                          <CardTitle>{cl.title}</CardTitle>
-                          <Badge tone="neutral" variant="soft">{cl.completedItems}/{cl.totalItems}</Badge>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Progress value={cl.completionPercentage} size="sm" className="w-20" />
-                          <IconButton label="Delete checklist" variant="ghost" size="sm" onClick={() => deleteChecklist.mutate(cl.id, { onSuccess: () => toast({ title: 'Checklist deleted', tone: 'success' }) })}>
-                            <Trash2 className="h-4 w-4 text-danger-500" />
-                          </IconButton>
-                        </div>
-                      </CardHeader>
-                      <CardBody className="space-y-1">
-                        {cl.items?.map((item) => (
-                          <div key={item.id} className="flex items-center gap-2 py-1">
-                            <Checkbox checked={item.completed} onChange={() => handleToggleItem(cl.id, item.id, item.completed)} />
-                            {editingItem[`${item.id}-title`] != null && editingItem[`${item.id}-title`] !== undefined ? (
-                              <Input
-                                value={editingItem[`${item.id}-title`] ?? item.title}
-                                onChange={(e) => setEditingItem((prev) => ({ ...prev, [`${item.id}-title`]: e.target.value }))}
-                                onBlur={() => handleSaveItemTitle(cl.id, item.id)}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveItemTitle(cl.id, item.id); }}
-                                autoFocus
-                                containerClassName="flex-1"
-                              />
-                            ) : (
-                              <span
-                                className={`flex-1 text-body ${item.completed ? 'line-through text-text-tertiary' : 'text-text-primary'}`}
-                                onDoubleClick={() => setEditingItem((prev) => ({ ...prev, [`${item.id}-title`]: item.title }))}
-                              >
-                                {item.title}
-                              </span>
-                            )}
+                         <CardHeader className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                             <ListChecks className="h-4 w-4 text-text-tertiary" />
+                             <CardTitle>{cl.title}</CardTitle>
+                             <Badge tone="neutral" variant="soft">{cl.completedItems}/{cl.totalItems}</Badge>
+                           </div>
+                           <div className="flex items-center gap-2">
+                             <Progress value={cl.completionPercentage} size="sm" className="w-20" />
+                             <IconButton label="Delete checklist" variant="ghost" size="sm" onClick={() => deleteChecklist.mutate(cl.id, { onSuccess: () => toast({ title: 'Checklist deleted', tone: 'success' }) })}>
+                               <Trash2 className="h-4 w-4 text-danger-500" />
+                             </IconButton>
+                           </div>
+                         </CardHeader>
+                       <CardBody className="space-y-1">
+                         {cl.items?.map((item) => (
+                           <div key={item.id} className="flex items-center gap-2 py-1">
+                             <Checkbox checked={item.completed} onChange={() => handleToggleItem(cl.id, item.id, item.completed)} />
+                             {editingItem[`${item.id}-content`] != null && editingItem[`${item.id}-content`] !== undefined ? (
+                               <Input
+                                 value={editingItem[`${item.id}-content`] ?? item.content}
+                                 onChange={(e) => setEditingItem((prev) => ({ ...prev, [`${item.id}-content`]: e.target.value }))}
+                                 onBlur={() => handleSaveItemTitle(cl.id, item.id)}
+                                 onKeyDown={(e) => { if (e.key === 'Enter') handleSaveItemTitle(cl.id, item.id); }}
+                                 autoFocus
+                                 containerClassName="flex-1"
+                               />
+                             ) : (
+                               <span
+                                 className={`flex-1 text-body ${item.completed ? 'line-through text-text-tertiary' : 'text-text-primary'}`}
+                                 onDoubleClick={() => setEditingItem((prev) => ({ ...prev, [`${item.id}-content`]: item.content }))}
+                               >
+                                 {item.content}
+                               </span>
+                             )}
                             <IconButton label="Delete item" variant="ghost" size="sm" onClick={() => deleteItem.mutate({ checklistId: cl.id, itemId: item.id })}>
                               <X className="h-3 w-3 text-text-tertiary" />
                             </IconButton>
@@ -446,11 +466,31 @@ export function TaskDetailsPage({ taskId, workspaceId = '', departmentId = '', p
             <CardBody className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-caption text-text-tertiary">Status</span>
-                <Badge tone={statusColor[task.status]} variant="soft" dot>{statusLabels[task.status]}</Badge>
+                <Dropdown
+                  trigger={
+                    <Badge tone={statusColor[task.status]} variant="soft" dot>{statusLabels[task.status]}</Badge>
+                  }
+                  align="right"
+                  items={statusOptions.map((o) => ({
+                    label: o.label,
+                    disabled: o.value === task.status,
+                    onClick: () => updateStatus.mutate({ taskId: task.id, status: FRONTEND_STATUS_MAP[o.value] }),
+                  }))}
+                />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-caption text-text-tertiary">Priority</span>
-                <Badge tone={task.priority === 'urgent' ? 'danger' : task.priority === 'high' ? 'warning' : task.priority === 'medium' ? 'info' : 'success'} variant="soft">{task.priority}</Badge>
+                <Dropdown
+                  trigger={
+                    <Badge tone={priorityTone(task.priority)} variant="soft">{task.priority}</Badge>
+                  }
+                  align="right"
+                  items={priorityOptions.map((o) => ({
+                    label: o.label,
+                    disabled: o.value === task.priority,
+                    onClick: () => updateTask.mutate({ taskId: task.id, data: mapToUpdateRequest({ priority: o.value }) }),
+                  }))}
+                />
               </div>
               {task.assigneeName && (
                 <div className="flex items-center justify-between">

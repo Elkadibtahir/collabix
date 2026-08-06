@@ -1,41 +1,46 @@
 import { useState } from 'react';
-import { Search, FileText, Folder, Upload, Download, MoreHorizontal, Star } from 'lucide-react';
-import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
+import { Search, FileText, Download, Star, Loader2, AlertCircle } from 'lucide-react';
+import { Card, CardBody } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
-import { Avatar } from '../../../components/ui/Avatar';
-import { IconButton } from '../../../components/ui/IconButton';
-import { useToast } from '../../../components/ui/Toast';
 import { EmptyState } from '../../../components/ui/EmptyState';
+import { useWorkspaceDocuments } from '../../../services/document-hooks';
+import { getFileIcon, formatFileSize, formatDate } from '../../knowledge/types/document-types';
 
-interface DocItem {
-  id: string;
-  title: string;
-  type: string;
-  category: string;
-  version: number;
-  updatedBy: string;
-  updatedAt: string;
-}
-
-interface DeptDocumentsData {
-  categories: string[];
-  documents: DocItem[];
-}
-
-export function DeptDocuments({ data, wsId, deptId }: { data?: DeptDocumentsData; wsId?: string; deptId?: string }) {
-  const { toast } = useToast();
+export function DeptDocuments({ wsId }: { wsId?: string; deptId?: string }) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
-  if (!data) {
-    return <EmptyState icon={<FileText />} title="Coming soon" description="Document management will be available in a future update." />;
+
+  const { data, isLoading, isError, refetch } = useWorkspaceDocuments(wsId ?? '');
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-text-tertiary" />
+      </div>
+    );
   }
 
-  const filtered = data.documents.filter((d) => {
+  if (isError) {
+    return (
+      <Card>
+        <CardBody className="py-16 flex flex-col items-center gap-3">
+          <AlertCircle className="h-8 w-8 text-danger-500" />
+          <p className="text-body font-medium text-text-secondary">Failed to load documents</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  const documents = data?.content ?? [];
+  const categories = Array.from(new Set(documents.map((d) => d.category).filter(Boolean))) as string[];
+
+  const filtered = documents.filter((d) => {
     if (search) {
       const q = search.toLowerCase();
-      if (!d.title.toLowerCase().includes(q)) return false;
+      if (!d.title.toLowerCase().includes(q) && !(d.fileName ?? '').toLowerCase().includes(q)) return false;
     }
     if (category && d.category !== category) return false;
     return true;
@@ -44,25 +49,42 @@ export function DeptDocuments({ data, wsId, deptId }: { data?: DeptDocumentsData
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
-        <Input placeholder="Search documents..." leftIcon={<Search />} value={search} onChange={(e) => setSearch(e.target.value)} containerClassName="max-w-sm" />
-        <Button leftIcon={<Upload />} size="sm" onClick={() => toast({ title: 'Coming soon', tone: 'info' })}>Upload</Button>
+        <Input
+          placeholder="Search documents..."
+          leftIcon={<Search />}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          containerClassName="max-w-sm"
+        />
+        <Badge tone="neutral" variant="soft">{filtered.length} documents</Badge>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <button onClick={() => setCategory(null)}
-          className={`rounded-md px-3 py-1.5 text-caption font-medium transition-colors ${!category ? 'bg-accent-600 text-white' : 'text-text-secondary hover:bg-surface-2'}`}>
-          All
-        </button>
-        {data.categories.map((c) => (
-          <button key={c} onClick={() => setCategory(c)}
-            className={`rounded-md px-3 py-1.5 text-caption font-medium transition-colors ${category === c ? 'bg-accent-600 text-white' : 'text-text-secondary hover:bg-surface-2'}`}>
-            {c}
+      {categories.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setCategory(null)}
+            className={`rounded-md px-3 py-1.5 text-caption font-medium transition-colors ${!category ? 'bg-accent-600 text-white' : 'text-text-secondary hover:bg-surface-2'}`}
+          >
+            All
           </button>
-        ))}
-      </div>
+          {categories.map((c) => (
+            <button
+              key={c}
+              onClick={() => setCategory(c)}
+              className={`rounded-md px-3 py-1.5 text-caption font-medium transition-colors ${category === c ? 'bg-accent-600 text-white' : 'text-text-secondary hover:bg-surface-2'}`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
 
       {filtered.length === 0 ? (
-        <EmptyState icon={<FileText />} title="No documents found" description="Upload documents to get started." />
+        <EmptyState
+          icon={<FileText />}
+          title={search || category ? 'No documents match your filters' : 'No documents yet'}
+          description="Documents uploaded to this workspace will appear here."
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((d) => (
@@ -75,26 +97,29 @@ export function DeptDocuments({ data, wsId, deptId }: { data?: DeptDocumentsData
                     </span>
                     <div className="min-w-0">
                       <p className="text-body font-medium text-text-primary truncate">{d.title}</p>
-                      <p className="text-2xs text-text-tertiary">{d.type}</p>
+                      <p className="text-2xs text-text-tertiary">{getFileIcon(d.mimeType).toUpperCase()} • {formatFileSize(d.fileSize)}</p>
                     </div>
                   </div>
-                  <IconButton label="Favorite" variant="ghost" size="sm" onClick={() => toast({ title: 'Coming soon', tone: 'info' })}>
-                    <Star className="h-4 w-4" />
-                  </IconButton>
+                  <Star className="h-4 w-4 text-text-tertiary" />
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge tone="neutral" variant="soft">{d.category}</Badge>
+                  {d.category && <Badge tone="neutral" variant="soft">{d.category}</Badge>}
                   <Badge tone="info" variant="soft">v{d.version}</Badge>
+                  <Badge tone={d.status === 'ACTIVE' ? 'success' : 'neutral'} variant="soft">{d.status}</Badge>
                 </div>
                 <div className="flex items-center justify-between border-t border-border-subtle pt-2">
                   <div className="flex items-center gap-2 text-2xs text-text-tertiary">
-                    <Avatar name={d.updatedBy} size="xs" tone={0} />
                     <span>{d.updatedBy}</span>
+                    <span>• {formatDate(d.updatedAt)}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <IconButton label="Download" variant="ghost" size="sm" onClick={() => toast({ title: 'Coming soon', tone: 'info' })}><Download className="h-3.5 w-3.5" /></IconButton>
-                    <IconButton label="More" variant="ghost" size="sm" onClick={() => toast({ title: 'Coming soon', tone: 'info' })}><MoreHorizontal className="h-3.5 w-3.5" /></IconButton>
-                  </div>
+                  <a
+                    href={`${import.meta.env.VITE_API_BASE_URL ?? '/api'}/workspaces/${wsId}/documents/${d.id}/download`}
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary hover:bg-surface-2 hover:text-text-primary transition-colors"
+                    title="Download"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </a>
                 </div>
               </CardBody>
             </Card>

@@ -4,7 +4,6 @@ import {
   Plus,
   LayoutGrid,
   LayoutList,
-  Filter,
   ChevronDown,
   Eye,
   Download,
@@ -12,24 +11,19 @@ import {
   Trash2,
   MoreHorizontal,
   Star,
-  Share2,
   FileText,
-  Clock,
-  User,
-  Tag,
 } from 'lucide-react';
-import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
+import { Card, CardBody } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { Badge } from '../../../components/ui/Badge';
-import { Avatar } from '../../../components/ui/Avatar';
+import { Badge, type Tone } from '../../../components/ui/Badge';
 import { IconButton } from '../../../components/ui/IconButton';
 import { Dropdown, type DropdownItem } from '../../../components/ui/Dropdown';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { cn } from '../../../lib/cn';
 import { reportsList } from './reports-data';
 import { useToast } from '../../../components/ui/Toast';
-import type { ReportMetadata, ReportFilter } from './report-types';
+import type { ReportMetadata, ReportFilter, ReportType, ReportStatus } from './report-types';
 
 type ViewMode = 'grid' | 'list';
 
@@ -134,7 +128,7 @@ export function ReportsCenterPage({ onNewReport, onBrowseTemplates }: { onNewRep
               { divider: true },
               ...reportTypes.map((t) => ({
                 label: t.charAt(0).toUpperCase() + t.slice(1),
-                onClick: () => setFilters((f) => ({ ...f, type: t as any })),
+                onClick: () => setFilters((f) => ({ ...f, type: t as ReportType })),
               })),
             ]}
           />
@@ -151,7 +145,7 @@ export function ReportsCenterPage({ onNewReport, onBrowseTemplates }: { onNewRep
               { divider: true },
               ...statuses.map((s) => ({
                 label: s.charAt(0).toUpperCase() + s.slice(1),
-                onClick: () => setFilters((f) => ({ ...f, status: s as any })),
+                onClick: () => setFilters((f) => ({ ...f, status: s as ReportStatus })),
               })),
             ]}
           />
@@ -225,7 +219,7 @@ function StatCard({
 }: {
   label: string;
   value: number;
-  tone: string;
+  tone: 'accent' | 'success' | 'warning' | 'info';
 }) {
   const bgColor = {
     accent: 'bg-accent-50 dark:bg-accent-100 text-accent-700 dark:text-accent-200',
@@ -263,13 +257,14 @@ function ListView({ reports }: { reports: ReportMetadata[] }) {
 }
 
 function ReportCard({ report }: { report: ReportMetadata }) {
-  const statusColor = {
+  const { toast } = useToast();
+  const statusColor: Record<string, Tone> = {
     generated: 'success',
     draft: 'warning',
     pending: 'info',
     failed: 'danger',
     cancelled: 'neutral',
-  } as const;
+  };
 
   const typeEmoji: Record<string, string> = {
     workspace: '🏢',
@@ -292,14 +287,36 @@ function ReportCard({ report }: { report: ReportMetadata }) {
     { label: 'Delete', icon: <Trash2 className="h-4 w-4" />, danger: true, onClick: () => toast({ title: 'Coming soon', tone: 'info' }) },
   ];
 
+  return (
+    <Card>
+      <CardBody>
+        <div className="flex items-start gap-3">
+          <div className="text-2xl mr-2">{typeEmoji[report.type]}</div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h4 className="text-body font-medium text-text-primary truncate">{report.name}</h4>
+              <Badge tone={statusColor[report.status]} variant="soft">{report.status}</Badge>
+            </div>
+            <p className="text-caption text-text-secondary mt-1 line-clamp-2">{report.description}</p>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <IconButton label="More" variant="ghost"><MoreHorizontal className="h-4 w-4" /></IconButton>
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+  }
+
 function ReportListRow({ report }: { report: ReportMetadata }) {
-  const statusColor = {
+  const { toast } = useToast();
+  const statusColor: Record<string, Tone> = {
     generated: 'success',
     draft: 'warning',
     pending: 'info',
     failed: 'danger',
     cancelled: 'neutral',
-  } as const;
+  };
 
   const typeEmoji: Record<string, string> = {
     workspace: '🏢',

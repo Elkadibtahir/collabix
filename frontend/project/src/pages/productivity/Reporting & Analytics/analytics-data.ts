@@ -3,6 +3,10 @@ import type {
   ProductivityMetrics,
   WorkloadMetrics,
   PerformanceMetrics,
+  DepartmentAnalytics,
+  TeamAnalytics,
+  ProjectAnalytics,
+  ActivityTimelineEvent,
 } from './analytics-types';
 
 export const kpiMetrics: KPIMetric[] = [];
@@ -41,7 +45,7 @@ export const projectProgressChart: { label: string; value: number }[] = [];
 export const taskCompletionChart: { label: string; value: number }[] = [];
 export const departmentProductivityChart: { label: string; value: number }[] = [];
 export const taskStatusChart: { label: string; color: string; value: number; percentage: number }[] = [];
-export const departmentAnalytics: any[] = [];
-export const teamAnalytics: any[] = [];
-export const projectAnalytics: any[] = [];
-export const recentActivity: any[] = [];
+export const departmentAnalytics: DepartmentAnalytics[] = [];
+export const teamAnalytics: TeamAnalytics[] = [];
+export const projectAnalytics: ProjectAnalytics[] = [];
+export const recentActivity: ActivityTimelineEvent[] = [];

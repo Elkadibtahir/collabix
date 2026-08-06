@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Wifi, WifiOff, RefreshCw, Clock } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 

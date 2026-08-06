@@ -216,9 +216,9 @@ private TaskSummaryWidget buildTaskSummary(UUID workspaceId) {
         TaskSummaryWidget summary = new TaskSummaryWidget();
         Instant now = Instant.now();
 
-        long activeTasks = taskRepository.countByWorkspaceIdAndStatus(workspaceId, TaskStatus.ACTIVE);
+        long activeTasks = taskRepository.countActiveByWorkspaceId(workspaceId);
         long archivedTasks = taskRepository.countByWorkspaceIdAndStatus(workspaceId, TaskStatus.ARCHIVED);
-        long overdueTasks = taskRepository.countOverdueByWorkspaceId(workspaceId, now, TaskStatus.ACTIVE);
+        long overdueTasks = taskRepository.countOverdueByWorkspaceId(workspaceId, now);
 
         // Calculate today's start and end (UTC)
         LocalDate today = LocalDate.now();
@@ -231,8 +231,8 @@ private TaskSummaryWidget buildTaskSummary(UUID workspaceId) {
         Instant startOfWeekInstant = startOfWeek.atStartOfDay(java.time.ZoneOffset.UTC).toInstant();
         Instant endOfWeekInstant = endOfWeek.atTime(LocalTime.MAX).atZone(java.time.ZoneOffset.UTC).toInstant();
 
-        long tasksDueToday = taskRepository.countDueTodayByWorkspaceId(workspaceId, startOfDay, endOfDay, TaskStatus.ACTIVE);
-        long tasksDueThisWeek = taskRepository.countDueThisWeekByWorkspaceId(workspaceId, startOfWeekInstant, endOfWeekInstant, TaskStatus.ACTIVE);
+        long tasksDueToday = taskRepository.countDueTodayByWorkspaceId(workspaceId, startOfDay, endOfDay);
+        long tasksDueThisWeek = taskRepository.countDueThisWeekByWorkspaceId(workspaceId, startOfWeekInstant, endOfWeekInstant);
 
         summary.setTotalTasks(activeTasks + archivedTasks);
         summary.setActiveTasks(activeTasks);
@@ -346,7 +346,7 @@ private TaskSummaryWidget buildTaskSummary(UUID workspaceId) {
      */
     private List<PersonalTaskWidget> buildPersonalTasks(UUID workspaceId, UUID userId) {
         PageRequest top = PageRequest.of(0, recentLimit);
-        return taskRepository.findLatestByCreatedByAndWorkspaceIdAndStatus(userId, workspaceId, TaskStatus.ACTIVE, top)
+        return taskRepository.findLatestByCreatedByAndWorkspaceId(userId, workspaceId, top)
                 .stream()
                 .map(t -> {
                     PersonalTaskWidget w = new PersonalTaskWidget();
@@ -366,7 +366,7 @@ private TaskSummaryWidget buildTaskSummary(UUID workspaceId) {
      */
     private long buildPersonalOverdueTasks(UUID workspaceId, UUID userId) {
         Instant now = Instant.now();
-        return taskRepository.countOverdueByCreatedByAndWorkspaceId(userId, workspaceId, now, TaskStatus.ACTIVE);
+        return taskRepository.countOverdueByCreatedByAndWorkspaceId(userId, workspaceId, now);
     }
 
     /**
@@ -412,20 +412,25 @@ private List<MentionWidget> buildUnreadMentions(UUID workspaceId, UUID userId) {
      */
     private List<PersonalHandoverWidget> buildTodaysHandovers(UUID workspaceId, UUID userId) {
         LocalDate today = LocalDate.now();
-        LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+        Instant startOfDay = today.atStartOfDay().atZone(java.time.ZoneId.systemDefault()).toInstant();
+        Instant endOfDay = today.atTime(LocalTime.MAX).atZone(java.time.ZoneId.systemDefault()).toInstant();
 
-        List<HandoverEntry> ensortes = handoverEntryRepository
-                .findByUserIdAndWorkspaceAndPassedAtBetween(userId, workspaceId, startOfDay, endOfDay);
+        List<HandoverEntry> entries = handoverEntryRepository
+                .findForUserBetween(workspaceId, userId, startOfDay, endOfDay);
 
-        return ensortes.stream()
+        return entries.stream()
                 .map(he -> {
                     PersonalHandoverWidget w = new PersonalHandoverWidget();
                     w.setId(he.getId());
                     w.setProjectName(he.getProject().getName());
-                    w.setShift(he.getShift().name());
-                    w.setPassedAt(he.getPassedAt());
-                    w.setManagerValidationStatus(he.getManagerValidationStatus().name());
+                    w.setSenderName(he.getSender().getFirstName() + " " + he.getSender().getLastName());
+                    w.setReceiverName(he.getReceiver().getFirstName() + " " + he.getReceiver().getLastName());
+                    w.setTitle(he.getTitle());
+                    w.setStatus(he.getStatus() != null ? he.getStatus().name() : null);
+                    w.setPriority(he.getPriority() != null ? he.getPriority().name() : null);
+                    w.setDueDate(he.getDueDate());
+                    w.setCreatedAt(he.getCreatedAt() != null
+                            ? he.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : null);
                     return w;
                 })
                 .collect(Collectors.toList());
@@ -596,9 +601,9 @@ private List<MentionWidget> buildUnreadMentions(UUID workspaceId, UUID userId) {
         TaskSummaryWidget summary = new TaskSummaryWidget();
         Instant now = Instant.now();
 
-        long activeTasks = taskRepository.countByDepartmentIdAndStatus(departmentId, TaskStatus.ACTIVE);
+        long activeTasks = taskRepository.countActiveByDepartmentId(departmentId);
         long archivedTasks = taskRepository.countByDepartmentIdAndStatus(departmentId, TaskStatus.ARCHIVED);
-        long overdueTasks = taskRepository.countOverdueByDepartmentId(departmentId, now, TaskStatus.ACTIVE);
+        long overdueTasks = taskRepository.countOverdueActiveByDepartmentId(departmentId, now);
 
         LocalDate today = LocalDate.now();
         Instant startOfDay = today.atStartOfDay(java.time.ZoneOffset.UTC).toInstant();
@@ -609,8 +614,8 @@ private List<MentionWidget> buildUnreadMentions(UUID workspaceId, UUID userId) {
         Instant startOfWeekInstant = startOfWeek.atStartOfDay(java.time.ZoneOffset.UTC).toInstant();
         Instant endOfWeekInstant = endOfWeek.atTime(LocalTime.MAX).atZone(java.time.ZoneOffset.UTC).toInstant();
 
-        long tasksDueToday = taskRepository.countDueTodayByDepartmentId(departmentId, startOfDay, endOfDay, TaskStatus.ACTIVE);
-        long tasksDueThisWeek = taskRepository.countDueThisWeekByDepartmentId(departmentId, startOfWeekInstant, endOfWeekInstant, TaskStatus.ACTIVE);
+        long tasksDueToday = taskRepository.countDueTodayByDepartmentId(departmentId, startOfDay, endOfDay);
+        long tasksDueThisWeek = taskRepository.countDueThisWeekByDepartmentId(departmentId, startOfWeekInstant, endOfWeekInstant);
 
         summary.setTotalTasks(activeTasks + archivedTasks);
         summary.setActiveTasks(activeTasks);
@@ -634,9 +639,8 @@ private List<MentionWidget> buildUnreadMentions(UUID workspaceId, UUID userId) {
                 .findAllByDepartment_IdAndStatus(departmentId, WorkspaceStatus.ACTIVE, PageRequest.of(0, recentLimit))
                 .getContent();
         if (projects.isEmpty()) return Collections.emptyList();
-        Map<UUID, Long> taskCounts = taskRepository.countByProjectIdsAndStatus(
-                projects.stream().map(Project::getId).collect(Collectors.toList()),
-                TaskStatus.ACTIVE
+        Map<UUID, Long> taskCounts = taskRepository.countActiveByProjectIds(
+                projects.stream().map(Project::getId).collect(Collectors.toList())
         ).stream().collect(Collectors.toMap(
                 row -> (UUID) row[0],
                 row -> (Long) row[1]
@@ -654,9 +658,8 @@ private List<MentionWidget> buildUnreadMentions(UUID workspaceId, UUID userId) {
         List<Project> projects = projectRepository.findTopByDepartmentIdOrderByCreatedAtDesc(
                 departmentId, WorkspaceStatus.ACTIVE, top);
         if (projects.isEmpty()) return Collections.emptyList();
-        Map<UUID, Long> taskCounts = taskRepository.countByProjectIdsAndStatus(
-                projects.stream().map(Project::getId).collect(Collectors.toList()),
-                TaskStatus.ACTIVE
+        Map<UUID, Long> taskCounts = taskRepository.countActiveByProjectIds(
+                projects.stream().map(Project::getId).collect(Collectors.toList())
         ).stream().collect(Collectors.toMap(
                 row -> (UUID) row[0],
                 row -> (Long) row[1]
@@ -674,9 +677,8 @@ private List<MentionWidget> buildUnreadMentions(UUID workspaceId, UUID userId) {
         List<Project> projects = projectRepository.findTopByDepartmentIdOrderByUpdatedAtDesc(
                 departmentId, WorkspaceStatus.ACTIVE, top);
         if (projects.isEmpty()) return Collections.emptyList();
-        Map<UUID, Long> taskCounts = taskRepository.countByProjectIdsAndStatus(
-                projects.stream().map(Project::getId).collect(Collectors.toList()),
-                TaskStatus.ACTIVE
+        Map<UUID, Long> taskCounts = taskRepository.countActiveByProjectIds(
+                projects.stream().map(Project::getId).collect(Collectors.toList())
         ).stream().collect(Collectors.toMap(
                 row -> (UUID) row[0],
                 row -> (Long) row[1]
@@ -832,16 +834,15 @@ private List<MentionWidget> buildUnreadMentions(UUID workspaceId, UUID userId) {
     /**
      * Calcule la progression of a project (tÃƒÆ’Ã‚Â¢ches totales, complÃƒÆ’Ã‚Â©tÃƒÆ’Ã‚Â©es, pourcentage).
      */
-    private ProjectProgressWidget buildProjectProgress(UUID projectId) {
+     private ProjectProgressWidget buildProjectProgress(UUID projectId) {
         ProjectProgressWidget progress = new ProjectProgressWidget();
-        long totalTasks = taskRepository.countByProject_IdAndStatus(projectId, TaskStatus.ACTIVE);
-        // We consider "Completed" as tasks that are archived.
-        // This is an MVP decision ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â a DONE status will be added in a future version.
-        long CompletedTasks = taskRepository.countByProject_IdAndStatus(projectId, TaskStatus.ARCHIVED);
-        progress.setTotalTasks(totalTasks + CompletedTasks);
-        progress.setCompletedTasks(CompletedTasks);
-        int percentage = (totalTasks + CompletedTasks) > 0
-                ? (int) Math.round((double) CompletedTasks / (totalTasks + CompletedTasks) * 100)
+        long totalActiveTasks = taskRepository.countActiveByProjectId(projectId);
+        long completedTasks = taskRepository.countByProject_IdAndStatus(projectId, TaskStatus.COMPLETED);
+        long archivedTasks = taskRepository.countByProject_IdAndStatus(projectId, TaskStatus.ARCHIVED);
+        progress.setTotalTasks(totalActiveTasks + completedTasks + archivedTasks);
+        progress.setCompletedTasks(completedTasks);
+        int percentage = (totalActiveTasks + completedTasks + archivedTasks) > 0
+                ? (int) Math.round((double) (completedTasks + archivedTasks) / (totalActiveTasks + completedTasks + archivedTasks) * 100)
                 : 0;
         progress.setProgressPercentage(percentage);
         return progress;
@@ -849,7 +850,7 @@ private List<MentionWidget> buildUnreadMentions(UUID workspaceId, UUID userId) {
 
 
     private List<ProjectTaskWidget> buildProjectTasks(UUID projectId) {
-        return taskRepository.findAllByProjectIdAndStatus(projectId, TaskStatus.ACTIVE)
+        return taskRepository.findAllActiveByProjectId(projectId)
                 .stream().limit(recentLimit)
                 .map(t -> {
                     ProjectTaskWidget w = new ProjectTaskWidget();
@@ -868,7 +869,7 @@ private List<MentionWidget> buildUnreadMentions(UUID workspaceId, UUID userId) {
      * Counts the tÃƒÆ’Ã‚Â¢ches en delay in a project.
      */
     private long buildProjectOverdueTasks(UUID projectId) {
-        return taskRepository.countOverdueByProjectId(projectId, Instant.now(), TaskStatus.ACTIVE);
+        return taskRepository.countOverdueActiveByProjectId(projectId, Instant.now());
     }
 
     /**
@@ -1045,9 +1046,9 @@ private List<MentionWidget> buildUnreadMentions(UUID workspaceId, UUID userId) {
         TaskSummaryWidget summary = new TaskSummaryWidget();
         Instant now = Instant.now();
 
-        long activeTasks = taskRepository.countByDepartmentIdAndStatus(departmentId, TaskStatus.ACTIVE);
+        long activeTasks = taskRepository.countActiveByDepartmentId(departmentId);
         long archivedTasks = taskRepository.countByDepartmentIdAndStatus(departmentId, TaskStatus.ARCHIVED);
-        long overdueTasks = taskRepository.countOverdueByDepartmentId(departmentId, now, TaskStatus.ACTIVE);
+        long overdueTasks = taskRepository.countOverdueActiveByDepartmentId(departmentId, now);
 
         LocalDate today = LocalDate.now();
         Instant startOfDay = today.atStartOfDay(java.time.ZoneOffset.UTC).toInstant();
@@ -1058,8 +1059,8 @@ private List<MentionWidget> buildUnreadMentions(UUID workspaceId, UUID userId) {
         Instant startOfWeekInstant = startOfWeek.atStartOfDay(java.time.ZoneOffset.UTC).toInstant();
         Instant endOfWeekInstant = endOfWeek.atTime(LocalTime.MAX).atZone(java.time.ZoneOffset.UTC).toInstant();
 
-        long tasksDueToday = taskRepository.countDueTodayByDepartmentId(departmentId, startOfDay, endOfDay, TaskStatus.ACTIVE);
-        long tasksDueThisWeek = taskRepository.countDueThisWeekByDepartmentId(departmentId, startOfWeekInstant, endOfWeekInstant, TaskStatus.ACTIVE);
+        long tasksDueToday = taskRepository.countDueTodayByDepartmentId(departmentId, startOfDay, endOfDay);
+        long tasksDueThisWeek = taskRepository.countDueThisWeekByDepartmentId(departmentId, startOfWeekInstant, endOfWeekInstant);
 
         summary.setTotalTasks(activeTasks + archivedTasks);
         summary.setActiveTasks(activeTasks);

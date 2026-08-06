@@ -1,6 +1,6 @@
 import { useToast } from '../../ui/Toast';
 
-type AISuccessAction =
+export type AISuccessAction =
   | 'report-generated'
   | 'analysis-complete'
   | 'summary-saved'

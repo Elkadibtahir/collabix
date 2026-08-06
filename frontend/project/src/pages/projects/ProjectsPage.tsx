@@ -1,14 +1,18 @@
 import { useState } from 'react';
-import { Search, Plus, ChevronDown, FolderKanban, AlertCircle } from 'lucide-react';
+import { Search, Plus, FolderKanban, AlertCircle, Briefcase, Network } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { Select } from '../../components/ui/Select';
 import { Badge } from '../../components/ui/Badge';
 import { Pagination } from '../../components/ui/Pagination';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { Can } from '../../pages/auth';
+import { useWorkspaceId } from '../../hooks/useWorkspaceId';
+import { useWorkspacesList } from '../../services/workspace-hooks';
+import { useDepartmentList } from '../../services/department-hooks';
 import { useProjectList } from '../../services/project-hooks';
 import { CreateProjectModal } from './modals/CreateProjectModal';
 import type { ProjectResponse, ProjectPriority } from './projects-types';
@@ -27,14 +31,86 @@ const statusColors: Record<string, 'success' | 'neutral'> = {
 
 export function ProjectsPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentWsId = useWorkspaceId();
   const wsId = searchParams.get('ws') ?? '';
   const deptId = searchParams.get('dept') ?? '';
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [showCreate, setShowCreate] = useState(false);
 
+  const { data: workspaces } = useWorkspacesList();
+  const { data: departments } = useDepartmentList(wsId || undefined);
   const { data, isLoading, isError, error } = useProjectList(wsId || undefined, deptId || undefined, search || undefined, page);
+
+  // If no workspace is in the URL, fall back to the selected workspace context.
+  const effectiveWsId = wsId || currentWsId;
+  const hasContext = !!effectiveWsId && !!deptId;
+
+  const handleSelectWs = (ws: string) => {
+    if (!ws) {
+      setSearchParams({});
+      return;
+    }
+    setSearchParams({ ws, dept: '' });
+  };
+
+  const handleSelectDept = (dept: string) => {
+    if (!dept) {
+      setSearchParams({ ws: effectiveWsId, dept: '' });
+      return;
+    }
+    setSearchParams({ ws: effectiveWsId, dept });
+  };
+
+  // Context selector fallback when workspace/department not provided in URL.
+  if (!hasContext) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-page font-semibold text-text-primary">Projects</h1>
+          <p className="text-body text-text-secondary">Select a workspace and department to manage projects.</p>
+        </div>
+        <Card>
+          <CardBody className="space-y-4">
+            <div className="flex items-center gap-2 text-text-secondary">
+              <Briefcase className="h-4 w-4" />
+              <span className="text-body font-medium text-text-primary">Workspace</span>
+            </div>
+            <Select
+              value={effectiveWsId}
+              onChange={(e) => handleSelectWs(e.target.value)}
+              options={[
+                { value: '', label: 'Select a workspace' },
+                ...(workspaces ?? []).map((w) => ({ value: w.id, label: w.name })),
+              ]}
+            />
+            {effectiveWsId && (
+              <>
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Network className="h-4 w-4" />
+                  <span className="text-body font-medium text-text-primary">Department</span>
+                </div>
+                <Select
+                  value={deptId}
+                  onChange={(e) => handleSelectDept(e.target.value)}
+                  options={[
+                    { value: '', label: 'Select a department' },
+                    ...(departments ?? []).map((d) => ({ value: d.id, label: d.name })),
+                  ]}
+                />
+              </>
+            )}
+            {(!workspaces || workspaces.length === 0) && (
+              <p className="text-caption text-text-tertiary">
+                No workspaces available. Please create a workspace first.
+              </p>
+            )}
+          </CardBody>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -64,16 +140,15 @@ export function ProjectsPage() {
             icon={<AlertCircle className="h-6 w-6" />}
             title="Failed to load projects"
             description={error instanceof Error ? error.message : 'An unexpected error occurred.'}
-          >
-            <Button variant="outline" onClick={() => window.location.reload()}>Retry</Button>
-          </EmptyState>
+            action={<Button variant="outline" onClick={() => window.location.reload()}>Retry</Button>}
+          />
         </CardBody>
       </Card>
     );
   }
 
   const projects = data?.content ?? [];
-  const totalPages = data?.totalPages ?? 0;
+  const totalPages = data?.page?.totalPages ?? 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -104,13 +179,12 @@ export function ProjectsPage() {
               icon={<FolderKanban className="h-6 w-6" />}
               title="No projects found"
               description={search ? 'No projects match your search.' : 'No projects yet. Create your first project to get started.'}
-            >
-              {!search && (
+              action={!search ? (
                 <Can permission="PROJECT_CREATE">
                   <Button leftIcon={<Plus />} onClick={() => setShowCreate(true)}>Create Project</Button>
                 </Can>
-              )}
-            </EmptyState>
+              ) : undefined}
+            />
           </CardBody>
         </Card>
       ) : (

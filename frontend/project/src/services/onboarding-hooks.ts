@@ -9,8 +9,8 @@ const keys = {
   stats: (wsId: string, deptId: string) => ['onboarding', 'stats', wsId, deptId] as const,
 };
 
-export function useOnboardingList(wsId: string, deptId: string) {
-  return useQuery({ queryKey: keys.all(wsId, deptId), queryFn: () => onboardingService.list(wsId, deptId), enabled: !!wsId && !!deptId });
+export function useOnboardingList(wsId: string, deptId: string, page = 0, size = 10) {
+  return useQuery({ queryKey: [...keys.all(wsId, deptId), page], queryFn: () => onboardingService.list(wsId, deptId, { page, size }), enabled: !!wsId && !!deptId });
 }
 
 export function useOnboardingDetail(wsId: string, deptId: string, onboardingId: string | undefined) {
@@ -47,5 +47,10 @@ export function useCreateOnboardingTask(wsId: string, deptId: string, onboarding
 
 export function useCompleteOnboardingTask(wsId: string, deptId: string, onboardingId: string) {
   const qc = useQueryClient();
-  return useMutation({ mutationFn: (taskId: string) => onboardingService.completeTask(wsId, deptId, onboardingId, taskId), onSuccess: () => qc.invalidateQueries({ queryKey: keys.tasks(wsId, deptId, onboardingId) }) });
+  return useMutation({ mutationFn: (taskId: string) => onboardingService.completeTask(wsId, deptId, onboardingId, taskId), onSuccess: () => { qc.invalidateQueries({ queryKey: keys.tasks(wsId, deptId, onboardingId) }); qc.invalidateQueries({ queryKey: keys.all(wsId, deptId) }); } });
+}
+
+export function useDeleteOnboardingTask(wsId: string, deptId: string, onboardingId: string) {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (taskId: string) => onboardingService.deleteTask(wsId, deptId, onboardingId, taskId), onSuccess: () => { qc.invalidateQueries({ queryKey: keys.tasks(wsId, deptId, onboardingId) }); qc.invalidateQueries({ queryKey: keys.all(wsId, deptId) }); } });
 }

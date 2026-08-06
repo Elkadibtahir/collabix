@@ -256,6 +256,12 @@ export interface CreateDepartmentRequest {
   description?: string;
 }
 
+export interface UpdateDepartmentRequest {
+  name?: string;
+  description?: string;
+  status?: string;
+}
+
 export function listDepartments(workspaceId: string) {
   return apiClient.get<DepartmentSummary[]>(`/workspaces/${workspaceId}/departments`);
 }
@@ -266,6 +272,10 @@ export function getDepartmentById(workspaceId: string, departmentId: string) {
 
 export function createDepartment(workspaceId: string, data: CreateDepartmentRequest) {
   return apiClient.post<DepartmentResponse>(`/workspaces/${workspaceId}/departments`, data);
+}
+
+export function updateDepartment(workspaceId: string, departmentId: string, data: UpdateDepartmentRequest) {
+  return apiClient.put<DepartmentResponse>(`/workspaces/${workspaceId}/departments/${departmentId}`, data);
 }
 
 /* ============================================================

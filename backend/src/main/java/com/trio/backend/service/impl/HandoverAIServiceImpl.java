@@ -6,23 +6,21 @@ import com.trio.backend.ai.enums.AITask;
 import com.trio.backend.ai.service.AIOrchestratorService;
 import com.trio.backend.dto.ai.HandoverAIEditRequest;
 import com.trio.backend.dto.ai.HandoverAIResponse;
-import com.trio.backend.entity.*;
+import com.trio.backend.entity.HandoverJournal;
+import com.trio.backend.entity.Project;
 import com.trio.backend.exception.BadRequestException;
-import com.trio.backend.exception.ForbiddenException;
 import com.trio.backend.exception.ResourceNotFoundException;
 import com.trio.backend.mapper.HandoverJournalMapper;
-import com.trio.backend.repository.*;
-import com.trio.backend.security.user.CustomUserDetails;
+import com.trio.backend.repository.HandoverJournalRepository;
+import com.trio.backend.repository.ProjectRepository;
 import com.trio.backend.service.HandoverAIService;
 import com.trio.backend.service.HandoverDataCollector;
+import com.trio.backend.service.HandoverSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
@@ -36,23 +34,23 @@ public class HandoverAIServiceImpl implements HandoverAIService {
     private final HandoverDataCollector handoverDataCollector;
     private final AIOrchestratorService orchestratorService;
     private final HandoverJournalRepository handoverJournalRepository;
-    private final HandoverEntryRepository handoverEntryRepository;
     private final ProjectRepository projectRepository;
-    private final WorkspaceMemberRepository workspaceMemberRepository;
-    private final WorkspaceRepository workspaceRepository;
     private final HandoverJournalMapper handoverJournalMapper;
+    private final HandoverSupport support;
 
     @Override
     public HandoverAIResponse generate(UUID workspaceId, UUID departmentId, UUID projectId) {
-        UUID userId = getAuthenticatedUserId();
-        assertActiveWorkspaceMember(workspaceId, userId);
-        assertWorkspaceAdminOrOwner(workspaceId, userId);
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+        if (!support.isWorkspaceAdminOrOwner(workspaceId, userId)) {
+            throw new com.trio.backend.exception.ForbiddenException("You do not have permission for this operation.");
+        }
 
         Map<String, Object> collectedData = handoverDataCollector.collect(workspaceId, departmentId, projectId);
 
-        Integer totalEntries = (Integer) collectedData.get("totalEntries");
-        if (totalEntries == null || totalEntries == 0) {
-            throw new BadRequestException("No handover entries found for this project. Cannot generate AI journal.");
+        Integer totalHandovers = (Integer) collectedData.get("totalHandovers");
+        if (totalHandovers == null || totalHandovers == 0) {
+            throw new BadRequestException("No handovers found for this project. Cannot generate AI journal.");
         }
 
         AIExecutionRequest executionRequest = new AIExecutionRequest();
@@ -68,16 +66,18 @@ public class HandoverAIServiceImpl implements HandoverAIService {
         AIExecutionResponse aiResponse = orchestratorService.execute(executionRequest);
         long executionTime = System.currentTimeMillis() - start;
 
-        return saveJournal(workspaceId, departmentId, projectId, userId, aiResponse, executionTime);
+        return saveJournal(workspaceId, departmentId, projectId, userId, collectedData, aiResponse, executionTime);
     }
 
     @Override
     public HandoverAIResponse regenerate(UUID workspaceId, UUID departmentId, UUID projectId, UUID journalId) {
-        UUID userId = getAuthenticatedUserId();
-        assertActiveWorkspaceMember(workspaceId, userId);
-        assertWorkspaceAdminOrOwner(workspaceId, userId);
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+        if (!support.isWorkspaceAdminOrOwner(workspaceId, userId)) {
+            throw new com.trio.backend.exception.ForbiddenException("You do not have permission for this operation.");
+        }
 
-        HandoverJournal journal = handoverJournalRepository.findByIdAndWorkspace(journalId, workspaceId)
+        handoverJournalRepository.findByIdAndWorkspace(journalId, workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Handover journal not found"));
 
         return generate(workspaceId, departmentId, projectId);
@@ -86,9 +86,11 @@ public class HandoverAIServiceImpl implements HandoverAIService {
     @Override
     public HandoverAIResponse edit(UUID workspaceId, UUID departmentId, UUID projectId, UUID journalId,
                                     HandoverAIEditRequest request) {
-        UUID userId = getAuthenticatedUserId();
-        assertActiveWorkspaceMember(workspaceId, userId);
-        assertWorkspaceAdminOrOwner(workspaceId, userId);
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+        if (!support.isWorkspaceAdminOrOwner(workspaceId, userId)) {
+            throw new com.trio.backend.exception.ForbiddenException("You do not have permission for this operation.");
+        }
 
         HandoverJournal journal = handoverJournalRepository.findByIdAndWorkspace(journalId, workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Handover journal not found"));
@@ -106,9 +108,11 @@ public class HandoverAIServiceImpl implements HandoverAIService {
 
     @Override
     public HandoverAIResponse approve(UUID workspaceId, UUID departmentId, UUID projectId, UUID journalId) {
-        UUID userId = getAuthenticatedUserId();
-        assertActiveWorkspaceMember(workspaceId, userId);
-        assertWorkspaceAdminOrOwner(workspaceId, userId);
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+        if (!support.isWorkspaceAdminOrOwner(workspaceId, userId)) {
+            throw new com.trio.backend.exception.ForbiddenException("You do not have permission for this operation.");
+        }
 
         HandoverJournal journal = handoverJournalRepository.findByIdAndWorkspace(journalId, workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Handover journal not found"));
@@ -120,9 +124,11 @@ public class HandoverAIServiceImpl implements HandoverAIService {
 
     @Override
     public HandoverAIResponse reject(UUID workspaceId, UUID departmentId, UUID projectId, UUID journalId) {
-        UUID userId = getAuthenticatedUserId();
-        assertActiveWorkspaceMember(workspaceId, userId);
-        assertWorkspaceAdminOrOwner(workspaceId, userId);
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+        if (!support.isWorkspaceAdminOrOwner(workspaceId, userId)) {
+            throw new com.trio.backend.exception.ForbiddenException("You do not have permission for this operation.");
+        }
 
         HandoverJournal journal = handoverJournalRepository.findByIdAndWorkspace(journalId, workspaceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Handover journal not found"));
@@ -133,7 +139,8 @@ public class HandoverAIServiceImpl implements HandoverAIService {
     }
 
     private HandoverAIResponse saveJournal(UUID workspaceId, UUID departmentId, UUID projectId,
-                                            UUID userId, AIExecutionResponse aiResponse, long executionTime) {
+                                            UUID userId, Map<String, Object> collectedData,
+                                            AIExecutionResponse aiResponse, long executionTime) {
         Project project = projectRepository.findByIdAndDepartment_Id(projectId, departmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
@@ -141,14 +148,21 @@ public class HandoverAIServiceImpl implements HandoverAIService {
         journal.setWorkspace(project.getDepartment().getWorkspace());
         journal.setDepartment(project.getDepartment());
         journal.setProject(project);
-        journal.setShift(determineCurrentShift());
-        journal.setJournalDate(LocalDate.now().atStartOfDay());
+        journal.setJournalDate(LocalDateTime.now().toLocalDate().atStartOfDay());
         journal.setGeneratedSummary(aiResponse.getResponse());
         journal.setMainDoneWork(aiResponse.getResponse());
         journal.setMainRemainingWork(aiResponse.getResponse());
         journal.setBlockers(aiResponse.getResponse());
         journal.setDifficulties(aiResponse.getResponse());
         journal.setRecommendations(aiResponse.getResponse());
+
+        journal.setTotalHandovers(longValue(collectedData, "totalHandovers"));
+        journal.setPendingHandovers(longValue(collectedData, "pendingHandovers"));
+        journal.setCompletedHandovers(longValue(collectedData, "completedHandovers"));
+        journal.setRejectedHandovers(longValue(collectedData, "rejectedHandovers"));
+        journal.setUrgentHandovers(longValue(collectedData, "urgentHandovers"));
+        journal.setOverdueHandovers(longValue(collectedData, "overdueHandovers"));
+
         journal.setGenerationStatus(HandoverJournal.GenerationStatus.GENERATED);
         journal.setGenerationDate(LocalDateTime.now());
         journal.setGenerationProcessedBy(userId);
@@ -160,13 +174,23 @@ public class HandoverAIServiceImpl implements HandoverAIService {
         return toResponse(saved, executionTime);
     }
 
+    private long longValue(Map<String, Object> data, String key) {
+        Object value = data.get(key);
+        if (value == null) {
+            return 0L;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return Long.parseLong(value.toString());
+    }
+
     private HandoverAIResponse toResponse(HandoverJournal journal, long executionTime) {
         return HandoverAIResponse.builder()
                 .journalId(journal.getId())
                 .workspaceId(journal.getWorkspace().getId())
                 .departmentId(journal.getDepartment().getId())
                 .projectId(journal.getProject().getId())
-                .shift(journal.getShift())
                 .journalDate(journal.getJournalDate())
                 .executiveSummary(journal.getGeneratedSummary())
                 .completedWork(journal.getMainDoneWork())
@@ -181,39 +205,5 @@ public class HandoverAIServiceImpl implements HandoverAIService {
                 .createdAt(journal.getCreatedAt())
                 .updatedAt(journal.getUpdatedAt())
                 .build();
-    }
-
-    private HandoverJournal.Shift determineCurrentShift() {
-        int hour = LocalDateTime.now().getHour();
-        return hour < 14 ? HandoverJournal.Shift.MORNING : HandoverJournal.Shift.EVENING;
-    }
-
-    private UUID getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()
-                || !(authentication.getPrincipal() instanceof CustomUserDetails user)) {
-            throw new BadRequestException("User is not authenticated.");
-        }
-        return user.getId();
-    }
-
-    private void assertActiveWorkspaceMember(UUID workspaceId, UUID userId) {
-        WorkspaceMember wm = workspaceMemberRepository
-                .findByWorkspaceMemberId_WorkspaceIdAndWorkspaceMemberId_UserId(workspaceId, userId)
-                .orElseThrow(() -> new ForbiddenException("You are not a member of this workspace."));
-        if (wm.getStatus() != com.trio.backend.enums.WorkspaceMemberStatus.ACTIVE) {
-            throw new ForbiddenException("You are not an active member of this workspace.");
-        }
-    }
-
-    private void assertWorkspaceAdminOrOwner(UUID workspaceId, UUID userId) {
-        boolean isAdmin = workspaceMemberRepository.existsWithRole(
-                workspaceId, userId, com.trio.backend.enums.WorkspaceRole.ADMIN);
-        boolean isOwner = workspaceRepository.findById(workspaceId)
-                .map(ws -> ws.getOwner().getId().equals(userId))
-                .orElse(false);
-        if (!isAdmin && !isOwner) {
-            throw new ForbiddenException("You do not have permission for this operation.");
-        }
     }
 }

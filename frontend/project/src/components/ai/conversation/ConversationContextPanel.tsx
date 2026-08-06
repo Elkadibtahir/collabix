@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { X, Building2, FolderKanban, Users, FileText, Clock, MessageSquare, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
-import { cn } from '../../../lib/cn';
-import { Badge } from '../../ui/Badge';
+import { X, Building2, FolderKanban, Users, Clock, MessageSquare, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ConversationContextPanelProps {
   open: boolean;

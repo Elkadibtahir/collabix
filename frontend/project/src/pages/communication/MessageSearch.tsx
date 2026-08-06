@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Search, Hash, MessageSquare, Loader2 } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -90,6 +90,7 @@ export function MessageSearch() {
                   className="flex items-start gap-3 rounded-lg px-3 py-2.5 hover:bg-surface-2 transition-colors text-left"
                 >
                   <Avatar
+                    name={`${msg.senderFirstName} ${msg.senderLastName}`}
                     src={msg.senderProfilePicture}
                     alt={`${msg.senderFirstName} ${msg.senderLastName}`}
                     size="sm"

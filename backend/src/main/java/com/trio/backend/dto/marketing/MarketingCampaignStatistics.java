@@ -15,7 +15,7 @@ public class MarketingCampaignStatistics {
     private long plannedCampaigns;
     private long cancelledCampaigns;
     private long archivedCampaigns;
-    private double averagecompletionPercentage;
+    private double averageCompletionPercentage;
     private double averageDurationDays;
     private Map<String, Long> campaignsByStatus;
     private Map<String, Long> campaignsByProject;

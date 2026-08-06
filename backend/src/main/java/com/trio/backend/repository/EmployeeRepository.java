@@ -39,6 +39,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID>, JpaSp
     @Query("SELECT e.department.name, COUNT(e) FROM Employee e WHERE e.department.id = :departmentId GROUP BY e.department.name")
     List<Object[]> countByDepartmentGrouped(@Param("departmentId") UUID departmentId);
 
+    @Query("SELECT e.department.name, COUNT(e) FROM Employee e WHERE e.department.workspace.id = :workspaceId GROUP BY e.department.name ORDER BY COUNT(e) DESC")
+    List<Object[]> countByDepartmentAcrossWorkspace(@Param("workspaceId") UUID workspaceId);
+
     @Query("SELECT e.team.name, COUNT(e) FROM Employee e WHERE e.department.id = :departmentId AND e.team IS NOT NULL GROUP BY e.team.name")
     List<Object[]> countByTeamGrouped(@Param("departmentId") UUID departmentId);
 

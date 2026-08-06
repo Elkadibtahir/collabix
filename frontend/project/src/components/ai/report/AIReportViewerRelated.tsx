@@ -1,5 +1,4 @@
 import { FileText, ArrowRight } from 'lucide-react';
-import { cn } from '../../../lib/cn';
 import { Badge } from '../../ui/Badge';
 import { type RelatedReport } from './AIReportViewerTypes';
 

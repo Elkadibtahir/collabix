@@ -21,11 +21,11 @@ export function ArchiveProjectModal({ open, onClose, wsId, deptId, projectId, pr
   const handleArchive = async () => {
     try {
       await deleteMutation.mutateAsync({ wsId, deptId, projectId });
-      toast({ title: 'Success', description: `Project "${projectName}" archived.` });
+      toast({ title: 'Success', description: `Project "${projectName}" archived.`, tone: 'success' });
       onClose();
       navigate('/app/projects');
     } catch {
-      toast({ title: 'Error', description: 'Failed to archive project.' });
+      toast({ title: 'Error', description: 'Failed to archive project.', tone: 'danger' });
     }
   };
 

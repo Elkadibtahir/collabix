@@ -15,7 +15,7 @@ export const documentService = {
     apiClient.get<PageResponse<DocumentResponse>>(`${base(wsId, deptId, projId)}`, { params: { page } }),
 
   listByWorkspace: (wsId: string, page?: number) =>
-    apiClient.get<PageResponse<DocumentResponse>>(`${baseWs(wsId)}/documents/workspace`, { params: { page } }),
+    apiClient.get<PageResponse<DocumentResponse>>(`${baseWs(wsId)}/documents`, { params: { page } }),
 
   getById: (wsId: string, deptId: string, projId: string, docId: string) =>
     apiClient.get<DocumentResponse>(`${base(wsId, deptId, projId)}/${docId}`),
@@ -52,7 +52,7 @@ export const documentService = {
     apiClient.get<PageResponse<DocumentResponse>>(`${base(wsId, deptId, projId)}/search`, { params: { query } }),
 
   download: (wsId: string, deptId: string, projId: string, docId: string): string =>
-    `${apiClient.defaults.baseURL}${base(wsId, deptId, projId)}/${docId}/download`,
+    `${import.meta.env.VITE_API_BASE_URL ?? '/api'}${base(wsId, deptId, projId)}/${docId}/download`,
 
   getVersions: (wsId: string, deptId: string, projId: string, docId: string) =>
     apiClient.get<DocumentResponse[]>(`${base(wsId, deptId, projId)}/${docId}/versions`),

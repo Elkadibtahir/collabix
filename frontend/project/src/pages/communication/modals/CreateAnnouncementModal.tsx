@@ -5,7 +5,7 @@ import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
 import { useCreateAnnouncement } from '../../../services/announcement-hooks';
 
-interface CreateAnnouncementModalProps extends Pick<ModalProps, 'open' | 'onClose'> {}
+type CreateAnnouncementModalProps = Pick<ModalProps, 'open' | 'onClose'>;
 
 export function CreateAnnouncementModal({ open, onClose }: CreateAnnouncementModalProps) {
   const [searchParams] = useSearchParams();

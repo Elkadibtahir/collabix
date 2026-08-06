@@ -24,6 +24,7 @@ import com.trio.backend.enums.RoleName;
 import com.trio.backend.enums.UserStatus;
 import com.trio.backend.enums.WorkspaceMemberStatus;
 import com.trio.backend.enums.WorkspaceRole;
+import com.trio.backend.event.AccountActivationEmailRequestedEvent;
 import com.trio.backend.exception.BadRequestException;
 import com.trio.backend.exception.ConflictException;
 import com.trio.backend.exception.ForbiddenException;
@@ -42,6 +43,7 @@ import com.trio.backend.security.user.CustomUserDetails;
 import com.trio.backend.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -76,7 +78,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserHistoryService userHistoryService;
     private final AccountActivationService accountActivationService;
-    private final EmailService emailService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -122,7 +124,9 @@ public class UserServiceImpl implements UserService {
                 .role(role)
                 .build();
 
-        userRoleRepository.save(userRole);
+        // The user role is persisted through the managed user's cascade. Persisting
+        // it directly as well makes Hibernate try to manage the same composite key
+        // twice when the activation-token query triggers an automatic flush.
         savedUser.getUserRoles().add(userRole);
 
         WorkspaceMember workspaceMember = WorkspaceMember.builder()
@@ -153,7 +157,8 @@ public class UserServiceImpl implements UserService {
 
         String activationLink = activationBaseUrl + "/activate?token=" + activationToken.getToken();
 
-        emailService.sendAccountActivationEmail(savedUser, activationLink);
+        eventPublisher.publishEvent(new AccountActivationEmailRequestedEvent(
+                this, savedUser.getId(), activationLink));
 
         UUID performedBy = getAuthenticatedUserId();
         userHistoryService.record(

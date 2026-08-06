@@ -1,6 +1,5 @@
-import { BarChart3, Users, FolderKanban, CheckSquare, Bell, Activity, Building2, AlertCircle, RefreshCw } from 'lucide-react';
+import { BarChart3, Users, FolderKanban, CheckSquare, Bell, Activity, Building2, RefreshCw } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { Button } from '../../components/ui/Button';

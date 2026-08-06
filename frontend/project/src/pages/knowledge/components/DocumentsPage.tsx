@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Search,
-  Plus,
   LayoutGrid,
   LayoutList,
   Table,
@@ -18,8 +17,7 @@ import {
 import { Card, CardBody } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { Badge } from '../../../components/ui/Badge';
-import { Avatar } from '../../../components/ui/Avatar';
+import { Badge, type Tone } from '../../../components/ui/Badge';
 import { IconButton } from '../../../components/ui/IconButton';
 import { Dropdown } from '../../../components/ui/Dropdown';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -256,7 +254,7 @@ function StatCard({
 function GridView({ documents, onAction, onNavigate }: {
   documents: DocumentResponse[];
   onAction: (m: { type: string; doc: DocumentResponse }) => void;
-  onNavigate: any;
+  onNavigate: (path: string) => void;
 }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -280,7 +278,7 @@ const fileTypeEmoji: Record<string, string> = {
 function DocumentCard({ document, onAction, onNavigate }: {
   document: DocumentResponse;
   onAction: (m: { type: string; doc: DocumentResponse }) => void;
-  onNavigate: any;
+  onNavigate: (path: string) => void;
 }) {
   const statusColor: Record<string, string> = {
     ACTIVE: 'success',
@@ -322,7 +320,7 @@ function DocumentCard({ document, onAction, onNavigate }: {
         )}
 
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-border-subtle">
-          <Badge tone={statusColor[document.status] as any} variant="soft">
+          <Badge tone={statusColor[document.status] as Tone} variant="soft">
             {document.status}
           </Badge>
           <div className="flex items-center gap-1">
@@ -350,7 +348,7 @@ function DocumentCard({ document, onAction, onNavigate }: {
 function ListView({ documents, onAction, onNavigate }: {
   documents: DocumentResponse[];
   onAction: (m: { type: string; doc: DocumentResponse }) => void;
-  onNavigate: any;
+  onNavigate: (path: string) => void;
 }) {
   return (
     <div className="space-y-2">
@@ -364,7 +362,7 @@ function ListView({ documents, onAction, onNavigate }: {
 function ListRow({ document, onAction, onNavigate }: {
   document: DocumentResponse;
   onAction: (m: { type: string; doc: DocumentResponse }) => void;
-  onNavigate: any;
+  onNavigate: (path: string) => void;
 }) {
   const statusColor: Record<string, string> = {
     ACTIVE: 'success',
@@ -385,7 +383,7 @@ function ListRow({ document, onAction, onNavigate }: {
       </div>
 
       <div className="flex items-center gap-2">
-        <Badge tone={statusColor[document.status] as any} variant="soft">{document.status}</Badge>
+        <Badge tone={statusColor[document.status] as Tone} variant="soft">{document.status}</Badge>
         <span className="text-caption text-text-tertiary">v{document.version}</span>
       </div>
 
@@ -412,7 +410,7 @@ function ListRow({ document, onAction, onNavigate }: {
 function TableView({ documents, onAction, onNavigate }: {
   documents: DocumentResponse[];
   onAction: (m: { type: string; doc: DocumentResponse }) => void;
-  onNavigate: any;
+  onNavigate: (path: string) => void;
 }) {
   const statusColor: Record<string, string> = {
     ACTIVE: 'success',
@@ -446,7 +444,7 @@ function TableView({ documents, onAction, onNavigate }: {
                 </div>
               </td>
               <td className="px-4 py-3">
-                <Badge tone={statusColor[doc.status] as any} variant="soft">{doc.status}</Badge>
+                <Badge tone={statusColor[doc.status] as Tone} variant="soft">{doc.status}</Badge>
               </td>
               <td className="px-4 py-3 text-body text-text-primary">v{doc.version}</td>
               <td className="px-4 py-3 text-body text-text-primary">{formatFileSize(doc.fileSize)}</td>
@@ -456,7 +454,7 @@ function TableView({ documents, onAction, onNavigate }: {
                   <IconButton label="View" variant="ghost" onClick={() => onNavigate(`./${doc.id}`)}>
                     <Eye className="h-4 w-4" />
                   </IconButton>
-                  <IconButton label="Edit" variant="ghost" onClick={() => onAction({ type: 'edit', doc: document })}>
+                  <IconButton label="Edit" variant="ghost" onClick={() => onAction({ type: 'edit', doc })}>
                     <Edit2 className="h-4 w-4" />
                   </IconButton>
                   {doc.status === 'ACTIVE' && (

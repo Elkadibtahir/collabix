@@ -7,5 +7,4 @@ export { membersList } from './members/members-data';
 // Projects Module
 export { ProjectsPage } from './projects/ProjectsPage';
 export { ProjectDetailsPage } from './projects/ProjectDetailsPage';
-export type { Project, ProjectFilters } from './projects/projects-types';
-export { projectsList } from './projects/projects-data';
+export type { ProjectResponse as Project, ProjectFilters } from './projects/projects-types';

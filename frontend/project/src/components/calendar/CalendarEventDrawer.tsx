@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { X, ExternalLink, Calendar, Clock, MapPin, Users, Briefcase, Building2, FolderKanban, Paperclip, FileText } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { X, Calendar, Clock, MapPin, Users, Briefcase, Building2, FolderKanban } from 'lucide-react';
 import { cn } from '../../lib/cn';
 import { IconButton } from '../ui/IconButton';
 import { Badge } from '../ui/Badge';
@@ -13,7 +12,6 @@ interface CalendarEventDrawerProps {
 }
 
 export function CalendarEventDrawer({ event, open, onClose }: CalendarEventDrawerProps) {
-  const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

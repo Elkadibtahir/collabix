@@ -26,6 +26,8 @@ public interface InterviewService {
 
     void cancel(UUID workspaceId, UUID departmentId, UUID candidateId, UUID interviewId);
 
+    InterviewResponse complete(UUID workspaceId, UUID departmentId, UUID candidateId, UUID interviewId);
+
     void delete(UUID workspaceId, UUID departmentId, UUID candidateId, UUID interviewId);
 
     InterviewParticipantResponse addParticipant(UUID workspaceId, UUID departmentId, UUID candidateId, UUID interviewId, AddParticipantRequest request);

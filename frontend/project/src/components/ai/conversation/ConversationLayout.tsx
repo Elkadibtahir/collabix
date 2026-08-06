@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Menu, Sparkles } from 'lucide-react';
-import { cn } from '../../../lib/cn';
 import { ConversationSidebar } from './ConversationSidebar';
 import { ConversationContextPanel } from './ConversationContextPanel';
 import { ConversationContextProvider, useConversationContext } from './ConversationContext';

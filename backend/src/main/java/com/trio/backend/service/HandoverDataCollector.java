@@ -1,6 +1,8 @@
 package com.trio.backend.service;
 
 import com.trio.backend.entity.*;
+import com.trio.backend.entity.HandoverEntry.HandoverStatus;
+import com.trio.backend.entity.HandoverEntry.Priority;
 import com.trio.backend.enums.CommentStatus;
 import com.trio.backend.enums.TaskStatus;
 import com.trio.backend.repository.*;
@@ -11,6 +13,9 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Collects workflow-based handover data for a project to feed the AI journal generation.
+ */
 @Service
 @RequiredArgsConstructor
 public class HandoverDataCollector {
@@ -20,6 +25,7 @@ public class HandoverDataCollector {
     private final TaskRepository taskRepository;
     private final CommentRepository commentRepository;
     private final ProjectRepository projectRepository;
+    private final HandoverSupport support;
 
     public Map<String, Object> collect(UUID workspaceId, UUID departmentId, UUID projectId) {
         Project project = projectRepository.findByIdAndDepartment_Id(projectId, departmentId)
@@ -28,25 +34,33 @@ public class HandoverDataCollector {
         LocalDate today = LocalDate.now();
         LocalDateTime dayStart = today.atStartOfDay();
         LocalDateTime dayEnd = today.atTime(LocalTime.MAX);
+        Instant startInstant = dayStart.atZone(ZoneId.systemDefault()).toInstant();
+        Instant endInstant = dayEnd.atZone(ZoneId.systemDefault()).toInstant();
 
         List<HandoverEntry> currentEntries = handoverEntryRepository
-                .findByProjectIdAndPassedAtBetween(projectId, dayStart, dayEnd);
+                .findByProjectIdAndCreatedAtBetween(projectId, startInstant, endInstant);
 
-        List<HandoverEntry> entriesMorning = filterByShift(currentEntries, HandoverEntry.Shift.MORNING);
-        List<HandoverEntry> entriesEvening = filterByShift(currentEntries, HandoverEntry.Shift.EVENING);
+        List<HandoverEntry> pending = filterStatus(currentEntries, HandoverStatus.PENDING);
+        List<HandoverEntry> completed = filterStatus(currentEntries, HandoverStatus.COMPLETED);
+        List<HandoverEntry> rejected = filterStatus(currentEntries, HandoverStatus.REJECTED);
+        List<HandoverEntry> urgent = currentEntries.stream()
+                .filter(e -> e.getPriority() == Priority.URGENT)
+                .collect(Collectors.toList());
+        List<HandoverEntry> overdue = currentEntries.stream()
+                .filter(HandoverDataCollector::isOverdue)
+                .collect(Collectors.toList());
 
-        List<Task> pendingTasks = taskRepository.findAllByProject_IdAndStatus(projectId, TaskStatus.ACTIVE);
+        List<Task> pendingTasks = taskRepository.findAllActiveByProjectId(projectId);
         List<Task> completedTasks = taskRepository.findAllByProject_IdAndStatus(projectId, TaskStatus.COMPLETED);
-
-        Instant dayStartInstant = dayStart.atZone(ZoneId.systemDefault()).toInstant();
 
         List<Comment> recentComments = commentRepository.findAllByProjectIdAndStatus(projectId, CommentStatus.ACTIVE)
                 .stream()
-                .filter(c -> c.getCreatedAt() != null && c.getCreatedAt().isAfter(dayStartInstant))
+                .filter(c -> c.getCreatedAt() != null && c.getCreatedAt().isAfter(startInstant))
                 .toList();
 
         Optional<HandoverJournal> previousJournal = handoverJournalRepository
-                .findByProjectIdAndShiftAndJournalDateBetween(projectId, today.minusDays(1));
+                .findByProjectIdAndJournalDateBetween(projectId, today.minusDays(1))
+                .stream().findFirst();
 
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("projectName", project.getName());
@@ -56,9 +70,19 @@ public class HandoverDataCollector {
         data.put("projectId", projectId);
         data.put("reportDate", today.toString());
 
-        data.put("entriesMorning", formatEntries(entriesMorning));
-        data.put("entriesEvening", formatEntries(entriesEvening));
-        data.put("totalEntries", currentEntries.size());
+        data.put("totalHandovers", currentEntries.size());
+        data.put("pendingHandovers", pending.size());
+        data.put("completedHandovers", completed.size());
+        data.put("rejectedHandovers", rejected.size());
+        data.put("urgentHandovers", urgent.size());
+        data.put("overdueHandovers", overdue.size());
+
+        data.put("handoverSummary", formatEntries(currentEntries));
+        data.put("pendingHandoverDetails", formatEntries(pending));
+        data.put("completedHandoverDetails", formatEntries(completed));
+        data.put("rejectedHandoverDetails", formatEntries(rejected));
+        data.put("urgentHandoverDetails", formatEntries(urgent));
+        data.put("overdueHandoverDetails", formatEntries(overdue));
 
         data.put("pendingTasks", formatTasks(pendingTasks));
         data.put("completedTasks", formatTasks(completedTasks));
@@ -73,58 +97,46 @@ public class HandoverDataCollector {
         return data;
     }
 
-    private List<HandoverEntry> filterByShift(List<HandoverEntry> entries, HandoverEntry.Shift shift) {
+    private static boolean isOverdue(HandoverEntry e) {
+        if (e.getDueDate() == null) {
+            return false;
+        }
+        boolean open = e.getStatus() == HandoverStatus.PENDING || e.getStatus() == HandoverStatus.DRAFT;
+        return open && e.getDueDate().isBefore(LocalDateTime.now());
+    }
+
+    private List<HandoverEntry> filterStatus(List<HandoverEntry> entries, HandoverStatus status) {
+        return entries.stream().filter(e -> e.getStatus() == status).collect(Collectors.toList());
+    }
+
+    private String formatEntries(List<HandoverEntry> entries) {
         return entries.stream()
-                .filter(e -> e.getShift() == shift)
-                .collect(Collectors.toList());
+                .map(e -> String.format("- [%s] %s (priority %s, due %s) from %s to %s: %s",
+                        e.getStatus(), e.getTitle(), e.getPriority(),
+                        e.getDueDate() != null ? e.getDueDate().toLocalDate() : "n/a",
+                        support.userDisplayName(e.getSender()),
+                        support.userDisplayName(e.getReceiver()),
+                        e.getContent() == null ? "" : e.getContent().replace("\n", " ")))
+                .collect(Collectors.joining("\n"));
     }
 
-    private List<Map<String, Object>> formatEntries(List<HandoverEntry> entries) {
-        return entries.stream().map(e -> {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("authorName", e.getUser().getFirstName() + " " + e.getUser().getLastName());
-            map.put("authorId", e.getUser().getId());
-            map.put("workFinished", e.getWorkFinished());
-            map.put("workRemaining", e.getWorkRemaining());
-            map.put("difficulties", e.getDifficulties());
-            map.put("blockers", e.getBlockers());
-            map.put("importantInformation", e.getImportantInformation());
-            map.put("priorities", e.getPriorities());
-            map.put("timeSpentMinutes", e.getTimeSpentMinutes());
-            map.put("needHelp", e.getNeedHelp());
-            map.put("additionalNotes", e.getAdditionalNotes());
-            map.put("passedAt", e.getPassedAt() != null ? e.getPassedAt().toString() : null);
-            return map;
-        }).toList();
+    private String formatTasks(List<Task> tasks) {
+        return tasks.stream()
+                .map(t -> String.format("- %s (status %s, due %s)",
+                        t.getTitle(), t.getStatus(),
+                        t.getDueAt() != null ? t.getDueAt().atZone(ZoneId.systemDefault()).toLocalDate() : "n/a"))
+                .collect(Collectors.joining("\n"));
     }
 
-    private List<Map<String, Object>> formatTasks(List<Task> tasks) {
-        return tasks.stream().map(t -> {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("title", t.getTitle());
-            map.put("description", t.getDescription());
-            map.put("status", t.getStatus());
-            map.put("storyPoints", t.getStoryPoints());
-            map.put("dueAt", t.getDueAt() != null ? t.getDueAt().toString() : null);
-            return map;
-        }).toList();
+    private String formatComments(List<Comment> comments) {
+        return comments.stream()
+                .map(c -> String.format("- %s (author %s)", c.getContent(), c.getCreatedBy()))
+                .collect(Collectors.joining("\n"));
     }
 
-    private List<Map<String, Object>> formatComments(List<Comment> comments) {
-        return comments.stream().map(c -> {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("content", c.getContent());
-            map.put("authorId", c.getCreatedBy());
-            map.put("createdAt", c.getCreatedAt() != null ? c.getCreatedAt().toString() : null);
-            return map;
-        }).toList();
-    }
-
-    private Map<String, Object> formatPreviousJournal(HandoverJournal journal) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("id", journal.getId());
-        map.put("summary", journal.getGeneratedSummary());
-        map.put("generatedAt", journal.getGenerationDate() != null ? journal.getGenerationDate().toString() : null);
-        return map;
+    private String formatPreviousJournal(HandoverJournal journal) {
+        return String.format("Summary: %s | Generated: %s",
+                journal.getGeneratedSummary() != null ? journal.getGeneratedSummary() : "",
+                journal.getGenerationDate() != null ? journal.getGenerationDate().toString() : "");
     }
 }

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { departmentService, listDepartments, getDepartmentById, createDepartment, type DepartmentDashboardResponse, type DepartmentSummary, type DepartmentResponse, type CreateDepartmentRequest } from './department-service';
+import { departmentService, listDepartments, getDepartmentById, createDepartment, updateDepartment, type DepartmentDashboardResponse, type DepartmentSummary, type DepartmentResponse, type CreateDepartmentRequest, type UpdateDepartmentRequest } from './department-service';
 
 const departmentKeys = {
   all: ['departments'] as const,
@@ -29,6 +29,17 @@ export function useCreateDepartment() {
       createDepartment(workspaceId, data),
     onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: departmentKeys.list(variables.workspaceId) });
+    },
+  });
+}
+
+export function useUpdateDepartment(workspaceId: string | undefined, departmentId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateDepartmentRequest) => updateDepartment(workspaceId!, departmentId!, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['departments', 'detail', workspaceId, departmentId] });
+      qc.invalidateQueries({ queryKey: departmentKeys.list(workspaceId!) });
     },
   });
 }

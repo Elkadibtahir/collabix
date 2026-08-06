@@ -35,3 +35,8 @@ export function useVerifyEmployeeSkill(wsId: string, deptId: string, employeeId:
   const qc = useQueryClient();
   return useMutation({ mutationFn: (skillId: string) => employeeSkillService.verify(wsId, deptId, employeeId, skillId), onSuccess: () => qc.invalidateQueries({ queryKey: keys.all(wsId, deptId, employeeId) }) });
 }
+
+export function useUnverifyEmployeeSkill(wsId: string, deptId: string, employeeId: string) {
+  const qc = useQueryClient();
+  return useMutation({ mutationFn: (skillId: string) => employeeSkillService.unverify(wsId, deptId, employeeId, skillId), onSuccess: () => qc.invalidateQueries({ queryKey: keys.all(wsId, deptId, employeeId) }) });
+}

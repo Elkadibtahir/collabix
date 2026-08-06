@@ -300,7 +300,7 @@ export function TeamsPage() {
       }
     });
     return list;
-  }, [query, deptFilter, statusFilter, managerFilter, sortBy]);
+  }, [query, deptFilter, statusFilter, managerFilter, sortBy, allTeams]);
 
   const totalMembers = allTeams.reduce((a, t) => a + t.memberCount, 0);
   const totalProjects = allTeams.reduce((a, t) => a + t.activeProjects, 0);

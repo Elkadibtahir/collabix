@@ -40,7 +40,7 @@ public class OnboardingController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_CREATE')")
     public ApiResponse<OnboardingResponse> create(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -71,7 +71,7 @@ public class OnboardingController {
     }
 
     @PutMapping("/{onboardingId}")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_UPDATE')")
     public ApiResponse<OnboardingResponse> update(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -83,7 +83,7 @@ public class OnboardingController {
 
     @DeleteMapping("/{onboardingId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_DELETE')")
     public void delete(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -93,7 +93,7 @@ public class OnboardingController {
 
     @PostMapping("/{onboardingId}/tasks")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_TASK_MANAGE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_TASK_MANAGE')")
     public ApiResponse<OnboardingTaskResponse> addTask(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -114,7 +114,7 @@ public class OnboardingController {
     }
 
     @PutMapping("/{onboardingId}/tasks/{taskId}")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_TASK_MANAGE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_TASK_MANAGE')")
     public ApiResponse<OnboardingTaskResponse> updateTask(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -126,7 +126,7 @@ public class OnboardingController {
     }
 
     @PutMapping("/{onboardingId}/tasks/{taskId}/Complete")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_TASK_MANAGE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_TASK_MANAGE')")
     public ApiResponse<OnboardingTaskResponse> CompleteTask(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -137,7 +137,7 @@ public class OnboardingController {
     }
 
     @PutMapping("/{onboardingId}/tasks/{taskId}/skip")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_TASK_MANAGE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_TASK_MANAGE')")
     public ApiResponse<OnboardingTaskResponse> skipTask(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -149,7 +149,7 @@ public class OnboardingController {
 
     @DeleteMapping("/{onboardingId}/tasks/{taskId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_TASK_MANAGE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'ONBOARDING_TASK_MANAGE')")
     public void deleteTask(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,

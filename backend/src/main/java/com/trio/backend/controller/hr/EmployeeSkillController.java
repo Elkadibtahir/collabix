@@ -38,7 +38,7 @@ public class EmployeeSkillController {
 
     @PostMapping("/employees/{employeeId}/skills")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_SKILL_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_SKILL_CREATE')")
     public ApiResponse<EmployeeSkillResponse> create(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -84,7 +84,7 @@ public class EmployeeSkillController {
     }
 
     @PutMapping("/employees/{employeeId}/skills/{skillId}")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_SKILL_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_SKILL_UPDATE')")
     public ApiResponse<EmployeeSkillResponse> update(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -97,7 +97,7 @@ public class EmployeeSkillController {
 
     @DeleteMapping("/employees/{employeeId}/skills/{skillId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_SKILL_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_SKILL_DELETE')")
     public void delete(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -107,7 +107,7 @@ public class EmployeeSkillController {
     }
 
     @PutMapping("/employees/{employeeId}/skills/{skillId}/verify")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_SKILL_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_SKILL_UPDATE')")
     public ApiResponse<EmployeeSkillResponse> verify(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -118,7 +118,7 @@ public class EmployeeSkillController {
     }
 
     @DeleteMapping("/employees/{employeeId}/skills/{skillId}/verify")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_SKILL_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'EMPLOYEE_SKILL_DELETE')")
     public ApiResponse<EmployeeSkillResponse> unverify(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,

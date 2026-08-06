@@ -1,9 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Sparkles, BarChart3, ScrollText, BookOpen, FileText, MessageSquare, BookMarked, Clock, X } from 'lucide-react';
 import { cn } from '../../lib/cn';
-import { AIHeader } from './AIHeader';
-import { AISearchInput } from './AISearchInput';
 
 const aiNavItems = [
   { id: 'ai', label: 'AI Dashboard', icon: Sparkles, path: '/app/ai' },

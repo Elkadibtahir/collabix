@@ -3,10 +3,12 @@ package com.trio.backend.dto.organisation.handover;
 import com.trio.backend.entity.HandoverEntry;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Create request of a HandoverEntry.
@@ -15,36 +17,26 @@ import java.time.LocalDateTime;
 @Setter
 public class CreateHandoverEntryRequest {
 
-    @NotNull
-    private HandoverEntry.Shift shift;
+    @NotNull(message = "Department is required")
+    private UUID departmentId;
 
-    @NotNull
-    private LocalDateTime passedAt;
+    @NotNull(message = "Project is required")
+    private UUID projectId;
 
-    @NotBlank(message = "Work finished is required")
-    private String workFinished;
+    private UUID taskId;
 
-    @NotBlank(message = "Work remaining is required")
-    private String workRemaining;
+    @NotNull(message = "Receiver is required")
+    private UUID receiverId;
 
-    @NotBlank(message = "Difficulties are required")
-    private String difficulties;
+    @NotBlank(message = "Title is required")
+    @Size(max = 255, message = "Title must not exceed 255 characters")
+    private String title;
 
-    @NotBlank(message = "Blockers are required")
-    private String blockers;
+    @NotBlank(message = "Content is required")
+    private String content;
 
-    @NotBlank(message = "Important information is required")
-    private String importantInformation;
+    @NotNull(message = "Priority is required")
+    private HandoverEntry.Priority priority;
 
-    @NotBlank(message = "Priorities are required")
-    private String priorities;
-
-    @NotNull(message = "Time spent is required")
-    private Long timeSpentMinutes;
-
-    @NotNull(message = "Need help is required")
-    private Boolean needHelp;
-
-    private String additionalNotes;
+    private LocalDateTime dueDate;
 }
-

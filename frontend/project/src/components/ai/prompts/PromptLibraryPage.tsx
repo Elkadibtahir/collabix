@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { BookMarked, Clock, Star, Sparkles } from 'lucide-react';
+import { Clock, Star, Sparkles } from 'lucide-react';
 import { PromptHeader } from './PromptHeader';
 import { PromptSearch } from './PromptSearch';
 import { PromptCategoryNav, type PromptCategoryNavProps } from './PromptCategoryNav';
@@ -46,7 +46,7 @@ export function PromptLibraryPage() {
   }, [activeCategory, searchQuery, favorites]);
 
   const featured = useMemo(() => prompts.filter((p) => p.featured), []);
-  const recent = useMemo(() => [], []);
+  const recent = useMemo<Prompt[]>(() => [], []);
   const favoritePrompts = useMemo(() => prompts.filter((p) => favorites.has(p.id)), [favorites]);
 
   function handleToggleFavorite(id: string) {
@@ -75,7 +75,7 @@ export function PromptLibraryPage() {
   if (error) {
     return (
       <div className="flex flex-col gap-6">
-        <PromptHeader onSearch={() => {}} />
+        <PromptHeader searches={searches} onSearch={() => {}} />
         <PromptErrorCard message={error} onRetry={() => setError(null)} onDismiss={() => setError(null)} />
       </div>
     );

@@ -6,13 +6,15 @@ import { Badge } from '../../../components/ui/Badge';
 import { Skeleton } from '../../../components/ui/Skeleton';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { useToast } from '../../../components/ui/Toast';
-import { useDepartmentDetail } from '../../../services/department-hooks';
-import { Bell, Settings as SettingsIcon, Shield, AlertCircle } from 'lucide-react';
+import { useDepartmentDetail, useUpdateDepartment } from '../../../services/department-hooks';
+import { Settings as SettingsIcon, Shield, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-export function DeptSettings({ wsId, deptId }: { wsId: string; deptId: string }) {
+export function DeptSettings({ wsId, deptId }: { wsId?: string; deptId?: string }) {
   const { toast } = useToast();
-  const { data: dept, isLoading, isError } = useDepartmentDetail(wsId || undefined, deptId);
+  const { data: dept, isLoading, isError } = useDepartmentDetail(wsId, deptId);
+  const updateDepartment = useUpdateDepartment(wsId, deptId);
   const [name, setName] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (dept?.name) setName(dept.name);
@@ -21,7 +23,7 @@ export function DeptSettings({ wsId, deptId }: { wsId: string; deptId: string })
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6 max-w-2xl">
-        {[1, 2, 3].map((i) => (
+        {[1, 2].map((i) => (
           <Card key={i}>
             <CardBody><Skeleton className="h-32 w-full" /></CardBody>
           </Card>
@@ -39,6 +41,22 @@ export function DeptSettings({ wsId, deptId }: { wsId: string; deptId: string })
       </Card>
     );
   }
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast({ title: 'Department name is required', tone: 'warning' });
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateDepartment.mutateAsync({ name: name.trim() });
+      toast({ title: 'Department settings saved', description: 'Your changes have been applied.', tone: 'success' });
+    } catch (err: unknown) {
+      toast({ title: err instanceof Error ? err.message : 'Failed to save settings', tone: 'danger' });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 max-w-2xl">
@@ -60,43 +78,14 @@ export function DeptSettings({ wsId, deptId }: { wsId: string; deptId: string })
               <label className="text-2xs font-medium text-text-secondary mb-1 block">Department Name</label>
               <Input value={name} onChange={(e) => setName(e.target.value)} />
             </div>
+            <div>
+              <label className="text-2xs font-medium text-text-secondary mb-1 block">Department ID</label>
+              <Input value={dept?.id ?? ''} disabled />
+            </div>
           </div>
           <div className="flex justify-end">
-            <Button size="sm" onClick={() => toast({ title: 'Coming soon', tone: 'info' })}>Save Changes</Button>
+            <Button size="sm" leftIcon={<CheckCircle2 />} onClick={handleSave} loading={saving}>Save Changes</Button>
           </div>
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-info-50 text-info-600 dark:bg-info-100">
-              <Bell className="h-4 w-4" />
-            </span>
-            <div>
-              <CardTitle>Notifications</CardTitle>
-              <CardDescription>Manage notification preferences</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardBody className="flex flex-col gap-3">
-          {[
-            { label: 'Activity updates', desc: 'Get notified about department activity' },
-            { label: 'New members', desc: 'When new members join the department' },
-            { label: 'Report generation', desc: 'When reports are generated' },
-            { label: 'Document uploads', desc: 'When new documents are added' },
-          ].map((n, i) => (
-            <div key={i} className="flex items-center justify-between py-2 border-b border-border-subtle last:border-0">
-              <div>
-                <p className="text-caption font-medium text-text-primary">{n.label}</p>
-                <p className="text-2xs text-text-tertiary">{n.desc}</p>
-              </div>
-              <label className="relative inline-flex h-5 w-9 cursor-pointer items-center rounded-full border border-border-default bg-surface-2 transition-colors">
-                <input type="checkbox" className="peer sr-only" defaultChecked />
-                <span className="absolute left-0.5 h-4 w-4 rounded-full bg-text-tertiary transition-all peer-checked:left-4 peer-checked:bg-accent-600" />
-              </label>
-            </div>
-          ))}
         </CardBody>
       </Card>
 
@@ -125,3 +114,5 @@ export function DeptSettings({ wsId, deptId }: { wsId: string; deptId: string })
     </div>
   );
 }
+
+export default DeptSettings;

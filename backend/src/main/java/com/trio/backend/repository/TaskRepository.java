@@ -110,4 +110,70 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     long countBySecurityAudit_IdAndStatus(UUID securityAuditId, TaskStatus status);
     long countByMarketingCampaign_Id(UUID marketingCampaignId);
     long countByMarketingCampaign_IdAndStatus(UUID marketingCampaignId, TaskStatus status);
+
+    // =========================================================================
+    // Active (non-terminal) task queries
+    // A task is "active" when its status is NOT ARCHIVED and NOT CANCELLED.
+    // These methods replace calls that used TaskStatus.ACTIVE as a literal
+    // filter, because task status can legitimately be TODO, IN_PROGRESS,
+    // IN_REVIEW, BLOCKED, or COMPLETED — all of which represent an open,
+    // non-archived task.
+    // =========================================================================
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.workspace.id = :workspaceId AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countActiveByWorkspaceId(@Param("workspaceId") UUID workspaceId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.id = :projectId AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countActiveByProjectId(@Param("projectId") UUID projectId);
+
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    List<Task> findAllActiveByProjectId(@Param("projectId") UUID projectId);
+
+    @Query("SELECT t FROM Task t WHERE t.project.id = :projectId AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED) ORDER BY t.updatedAt DESC")
+    List<Task> findLatestActiveByProjectId(@Param("projectId") UUID projectId, Pageable pageable);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.id = :projectId AND t.dueAt IS NOT NULL AND t.dueAt < :now AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countOverdueActiveByProjectId(@Param("projectId") UUID projectId, @Param("now") Instant now);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.id = :departmentId AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countActiveByDepartmentId(@Param("departmentId") UUID departmentId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.id = :departmentId AND t.dueAt IS NOT NULL AND t.dueAt < :now AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countOverdueActiveByDepartmentId(@Param("departmentId") UUID departmentId, @Param("now") Instant now);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.id = :departmentId AND t.dueAt IS NOT NULL AND t.dueAt >= :startOfDay AND t.dueAt <= :endOfDay AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countDueTodayByDepartmentId(@Param("departmentId") UUID departmentId, @Param("startOfDay") Instant startOfDay, @Param("endOfDay") Instant endOfDay);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.id = :departmentId AND t.dueAt IS NOT NULL AND t.dueAt >= :startOfWeek AND t.dueAt <= :endOfWeek AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countDueThisWeekByDepartmentId(@Param("departmentId") UUID departmentId, @Param("startOfWeek") Instant startOfWeek, @Param("endOfWeek") Instant endOfWeek);
+
+    @Query("SELECT t.project.id, COUNT(t) FROM Task t WHERE t.project.id IN :projectIds AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED) GROUP BY t.project.id")
+    List<Object[]> countActiveByProjectIds(@Param("projectIds") List<UUID> projectIds);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.workspace.id = :workspaceId AND t.dueAt IS NOT NULL AND t.dueAt < :now AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countOverdueByWorkspaceId(@Param("workspaceId") UUID workspaceId, @Param("now") Instant now);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.workspace.id = :workspaceId AND t.dueAt IS NOT NULL AND t.dueAt >= :startOfDay AND t.dueAt <= :endOfDay AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countDueTodayByWorkspaceId(@Param("workspaceId") UUID workspaceId, @Param("startOfDay") Instant startOfDay, @Param("endOfDay") Instant endOfDay);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.project.department.workspace.id = :workspaceId AND t.dueAt IS NOT NULL AND t.dueAt >= :startOfWeek AND t.dueAt <= :endOfWeek AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countDueThisWeekByWorkspaceId(@Param("workspaceId") UUID workspaceId, @Param("startOfWeek") Instant startOfWeek, @Param("endOfWeek") Instant endOfWeek);
+
+    @Query("SELECT t FROM Task t JOIN FETCH t.project WHERE t.createdBy = :userId AND t.project.department.workspace.id = :workspaceId AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED) ORDER BY t.updatedAt DESC")
+    List<Task> findLatestByCreatedByAndWorkspaceId(@Param("userId") UUID userId, @Param("workspaceId") UUID workspaceId, Pageable pageable);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.createdBy = :userId AND t.project.department.workspace.id = :workspaceId AND t.dueAt IS NOT NULL AND t.dueAt < :now AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countOverdueByCreatedByAndWorkspaceId(@Param("userId") UUID userId, @Param("workspaceId") UUID workspaceId, @Param("now") Instant now);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.sprint.id = :sprintId AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countActiveBySprintId(@Param("sprintId") UUID sprintId);
+
+    @Query("SELECT COALESCE(SUM(t.storyPoints), 0) FROM Task t WHERE t.sprint.id = :sprintId AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    int sumActiveStoryPointsBySprintId(@Param("sprintId") UUID sprintId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.securityAudit.id = :securityAuditId AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countActiveBySecurityAuditId(@Param("securityAuditId") UUID securityAuditId);
+
+    @Query("SELECT COUNT(t) FROM Task t WHERE t.marketingCampaign.id = :marketingCampaignId AND t.status NOT IN (com.trio.backend.enums.TaskStatus.ARCHIVED, com.trio.backend.enums.TaskStatus.CANCELLED)")
+    long countActiveByMarketingCampaignId(@Param("marketingCampaignId") UUID marketingCampaignId);
 }

@@ -27,13 +27,15 @@ function hashIndex(name: string, len: number) {
 export interface AvatarProps {
   name: string;
   src?: string;
+  alt?: string;
+  fallback?: string;
   size?: Size;
   tone?: number;
   className?: string;
   ring?: boolean;
 }
 
-export function Avatar({ name, src, size = 'md', tone, className, ring }: AvatarProps) {
+export function Avatar({ name, src, alt, fallback, size = 'md', tone, className, ring }: AvatarProps) {
   const initials = name
     .split(' ')
     .map((w) => w[0])
@@ -53,9 +55,9 @@ export function Avatar({ name, src, size = 'md', tone, className, ring }: Avatar
       title={name}
     >
       {src ? (
-        <img src={src} alt={name} className="h-full w-full object-cover" />
+        <img src={src} alt={alt ?? name} className="h-full w-full object-cover" />
       ) : (
-        initials
+        fallback ?? initials
       )}
     </span>
   );

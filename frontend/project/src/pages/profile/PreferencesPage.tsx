@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Moon, Sun, Monitor, Globe, Calendar, Clock, PanelLeft, LayoutDashboard, Eye, Activity, Type, Contrast } from 'lucide-react';
+import { Moon, Sun, Monitor, LayoutDashboard, Eye } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Select } from '../../components/ui/Select';
-import { Radio, RadioGroup } from '../../components/ui/Radio';
 import { Toggle } from '../../components/ui/Toggle';
 
 export function PreferencesPage() {
@@ -112,7 +111,7 @@ export function PreferencesPage() {
           </div>
         </CardHeader>
         <CardBody className="space-y-5">
-          <Toggle label="Compact Sidebar" helperText="Reduce sidebar width to show more content" checked={sidebarCompact} onChange={setSidebarCompact} />
+          <Toggle label="Compact Sidebar" description="Reduce sidebar width to show more content" checked={sidebarCompact} onChange={(e) => setSidebarCompact(e.target.checked)} />
           <div className="grid gap-4 sm:grid-cols-2">
             <Select label="Landing Page" value={landingPage} onChange={(e) => setLandingPage(e.target.value)} options={[
               { value: 'dashboard', label: 'Dashboard' },
@@ -142,8 +141,8 @@ export function PreferencesPage() {
           </div>
         </CardHeader>
         <CardBody className="space-y-5">
-          <Toggle label="High Contrast" helperText="Increase contrast for better readability" checked={highContrast} onChange={setHighContrast} />
-          <Toggle label="Reduced Motion" helperText="Minimize animations and transitions" checked={reducedMotion} onChange={setReducedMotion} />
+          <Toggle label="High Contrast" description="Increase contrast for better readability" checked={highContrast} onChange={(e) => setHighContrast(e.target.checked)} />
+          <Toggle label="Reduced Motion" description="Minimize animations and transitions" checked={reducedMotion} onChange={(e) => setReducedMotion(e.target.checked)} />
           <Select label="Font Size" value={fontSize} onChange={(e) => setFontSize(e.target.value)} options={[
             { value: 'small', label: 'Small' },
             { value: 'medium', label: 'Medium' },

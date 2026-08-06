@@ -36,7 +36,7 @@ public class RecruiterNoteController {
 
     @PostMapping("/candidates/{candidateId}/notes")
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'RECRUITER_NOTE_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'RECRUITER_NOTE_CREATE')")
     public ApiResponse<RecruiterNoteResponse> create(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -83,7 +83,7 @@ public class RecruiterNoteController {
     }
 
     @PutMapping("/candidates/{candidateId}/notes/{noteId}")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'RECRUITER_NOTE_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'RECRUITER_NOTE_UPDATE')")
     public ApiResponse<RecruiterNoteResponse> update(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -96,7 +96,7 @@ public class RecruiterNoteController {
 
     @DeleteMapping("/candidates/{candidateId}/notes/{noteId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'RECRUITER_NOTE_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'RECRUITER_NOTE_DELETE')")
     public void delete(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,

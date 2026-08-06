@@ -17,7 +17,6 @@ import {
   Settings,
   Palette,
   LogOut,
-  X,
   Bell as BellIcon,
   Shield,
   Loader2,
@@ -27,10 +26,11 @@ import { Avatar } from '../ui/Avatar';
 import { useTheme } from '../../lib/theme';
 import { cn } from '../../lib/cn';
 import { SearchModal } from '../search/SearchModal';
-import { useUnreadCount, useUnreadNotifications, useMarkAsRead } from '../../services/notification-hooks';
+import { useUnreadCount, useUnreadNotifications } from '../../services/notification-hooks';
 import { useWorkspaceId } from '../../hooks/useWorkspaceId';
 import { useWorkspacesList } from '../../services/workspace-hooks';
 import { useAuth } from '../../lib/auth-context';
+import { isAdmin } from '../../lib/access';
 
 /* ---------- Workspace Selector ---------- */
 
@@ -52,6 +52,7 @@ function WorkspaceSelector() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const canCreateWorkspace = (user?.permissions ?? []).includes('WORKSPACE_CREATE');
+  const isAdminUser = isAdmin(user?.roles ?? []);
 
   const active = useMemo(() => {
     if (!workspaces?.length) return null;
@@ -157,17 +158,19 @@ function WorkspaceSelector() {
             ))}
           </div>
           <div className="my-1 h-px bg-border-subtle" />
-          <button
-            type="button"
-            onClick={() => { setOpen(false); navigate('/app/all-workspaces'); }}
-            className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-body text-text-secondary hover:bg-surface-2 hover:text-text-primary transition-colors"
-          >
-            <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default text-text-tertiary">
-              <Building2 className="h-4 w-4" />
-            </span>
-            <span className="font-medium">View all workspaces</span>
-          </button>
-          {canCreateWorkspace && (
+          {isAdminUser && (
+            <button
+              type="button"
+              onClick={() => { setOpen(false); navigate('/app/all-workspaces'); }}
+              className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-body text-text-secondary hover:bg-surface-2 hover:text-text-primary transition-colors"
+            >
+              <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border-default text-text-tertiary">
+                <Building2 className="h-4 w-4" />
+              </span>
+              <span className="font-medium">View all workspaces</span>
+            </button>
+          )}
+          {isAdminUser && canCreateWorkspace && (
             <button
               type="button"
               onClick={() => { setOpen(false); navigate('/app/create-workspace'); }}
@@ -187,7 +190,7 @@ function WorkspaceSelector() {
 
 /* ---------- Notifications Dropdown ---------- */
 
-function mapNotifForDropdown(n: any) {
+function mapNotifForDropdown(n: { category?: string; notificationType?: string; id: string; title: string; body?: string; createdAt: string; status?: string }) {
   const type = n.category ?? n.notificationType ?? 'info';
   const toneMap: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
     mention: 'info',
@@ -331,7 +334,7 @@ function UserMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const displayName = user ? `${user.firstName} ${user.lastName}` : 'User';
   const initials = user
     ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
@@ -400,7 +403,10 @@ function UserMenu() {
           <div className="my-1 h-px bg-border-subtle" />
           <button
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={() => {
+              setOpen(false);
+              signOut();
+            }}
             className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-body text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-100 transition-colors"
           >
             <LogOut className="h-4 w-4 shrink-0" />

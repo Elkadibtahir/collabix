@@ -52,7 +52,7 @@ public class HrNotificationController {
     }
 
     @PutMapping("/{notificationId}/read")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'HR_NOTIFICATION_DISMISS')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'HR_NOTIFICATION_DISMISS')")
     public ApiResponse<NotificationResponse> markAsRead(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -62,7 +62,7 @@ public class HrNotificationController {
     }
 
     @PutMapping("/read-all")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'HR_NOTIFICATION_DISMISS')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'HR_NOTIFICATION_DISMISS')")
     public ApiResponse<Void> markAllAsRead(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -72,7 +72,7 @@ public class HrNotificationController {
     }
 
     @PutMapping("/{notificationId}/dismiss")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'HR_NOTIFICATION_DISMISS')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'HR_NOTIFICATION_DISMISS')")
     public ApiResponse<NotificationResponse> dismiss(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -83,7 +83,7 @@ public class HrNotificationController {
 
     @DeleteMapping("/{notificationId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'NOTIFICATION_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'NOTIFICATION_DELETE')")
     public void delete(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,

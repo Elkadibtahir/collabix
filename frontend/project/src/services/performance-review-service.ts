@@ -107,8 +107,8 @@ function base(wsId: string, deptId: string) {
 }
 
 export const performanceReviewService = {
-  list: (wsId: string, deptId: string) =>
-    apiClient.get<PageResponse<PerformanceReviewResponse>>(`${base(wsId, deptId)}`),
+  list: (wsId: string, deptId: string, params?: { page?: number; size?: number; keyword?: string; status?: string; employeeId?: string; reviewerId?: string; reviewPeriod?: string }) =>
+    apiClient.get<PageResponse<PerformanceReviewResponse>>(`${base(wsId, deptId)}`, { params }),
 
   getById: (wsId: string, deptId: string, reviewId: string) =>
     apiClient.get<PerformanceReviewResponse>(`${base(wsId, deptId)}/${reviewId}`),

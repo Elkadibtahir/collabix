@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Save, Archive, Trash2, AlertTriangle, ArrowLeft, Building2, ExternalLink, Clock } from 'lucide-react';
+import { Settings, Save, Archive, Trash2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -11,7 +11,7 @@ import { useToast } from '../../components/ui/Toast';
 import { useWorkspaceDetail, useUpdateWorkspace, useArchiveWorkspace, useDeleteWorkspace } from '../../services/workspace-hooks';
 import { useWorkspaceId } from '../../hooks/useWorkspaceId';
 
-const statusVariant: Record<string, 'success' | 'warning' | 'info' | 'neutral'> = {
+const statusTone: Record<string, 'success' | 'warning' | 'info' | 'neutral'> = {
   active: 'success',
   archived: 'neutral',
   suspended: 'warning',
@@ -175,7 +175,7 @@ export function WorkspaceSettingsPage() {
             />
             <div>
               <p className="text-caption font-medium text-text-secondary mb-1.5">Status</p>
-              <Badge variant={statusVariant[workspace.status] ?? 'neutral'}>
+              <Badge tone={statusTone[workspace.status] ?? 'neutral'}>
                 {workspace.status.charAt(0).toUpperCase() + workspace.status.slice(1)}
               </Badge>
             </div>

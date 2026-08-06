@@ -1,6 +1,6 @@
 package com.trio.backend.dto.organisation.handover;
 
-
+import com.trio.backend.dto.user.UserSummaryResponse;
 import com.trio.backend.entity.HandoverEntry;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Response CRUD pour une HandoverEntry.
+ * Response CRUD for a HandoverEntry.
  */
 @Getter
 @Setter
@@ -26,34 +26,31 @@ public class HandoverEntryResponse {
 
     private UUID taskId;
 
-    private UUID userId;
+    private UserSummaryResponse sender;
 
-    private String workFinished;
+    private UserSummaryResponse receiver;
 
-    private String workRemaining;
+    private String title;
 
-    private String difficulties;
+    private String content;
 
-    private String blockers;
+    private HandoverEntry.Priority priority;
 
-    private String importantInformation;
+    private HandoverEntry.HandoverStatus status;
 
-    private String priorities;
+    private LocalDateTime dueDate;
 
-    private Long timeSpentMinutes;
+    private LocalDateTime sentAt;
 
-    private Boolean needHelp;
+    private LocalDateTime acceptedAt;
 
-    private String additionalNotes;
+    private LocalDateTime rejectedAt;
 
-    private HandoverEntry.Shift shift;
+    private LocalDateTime completedAt;
 
-    private LocalDateTime passedAt;
-
-    private HandoverEntry.HandoverEntryStatus status;
+    private LocalDateTime archivedAt;
 
     private Instant createdAt;
 
     private Instant updatedAt;
 }
-

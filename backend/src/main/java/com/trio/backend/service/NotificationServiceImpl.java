@@ -74,6 +74,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setWorkspace(workspace);
         notification.setRecipient(recipient);
         if (request.getPriority() != null) notification.setPriority(request.getPriority());
+        if (notification.getPriority() == null) notification.setPriority("NORMAL");
         if (request.getCategory() != null) notification.setCategory(request.getCategory());
         if (request.getGroupKey() != null) notification.setGroupKey(request.getGroupKey());
 

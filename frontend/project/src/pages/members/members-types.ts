@@ -1,4 +1,3 @@
-import type { LucideIcon } from 'lucide-react';
 
 export type EmploymentType = 'full-time' | 'part-time' | 'contract' | 'intern';
 export type MemberStatus = 'active' | 'away' | 'offline' | 'inactive';

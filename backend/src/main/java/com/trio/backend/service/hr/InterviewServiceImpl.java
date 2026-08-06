@@ -2,6 +2,7 @@ package com.trio.backend.service.hr;
 
 import com.trio.backend.dto.hr.AddParticipantRequest;
 import com.trio.backend.dto.hr.CreateInterviewRequest;
+import com.trio.backend.dto.notification.CreateNotificationRequest;
 import com.trio.backend.dto.hr.InterviewFeedbackRequest;
 import com.trio.backend.dto.hr.InterviewFeedbackResponse;
 import com.trio.backend.dto.hr.InterviewParticipantResponse;
@@ -27,7 +28,9 @@ import com.trio.backend.repository.InterviewFeedbackRepository;
 import com.trio.backend.repository.InterviewParticipantRepository;
 import com.trio.backend.repository.InterviewRepository;
 import com.trio.backend.repository.UserRepository;
+import com.trio.backend.service.NotificationService;
 import com.trio.backend.util.SecurityUtils;
+import com.trio.backend.entity.Notification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -77,6 +80,7 @@ public class InterviewServiceImpl implements InterviewService {
     private final CandidateStatusHistoryRepository candidateStatusHistoryRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
     private final InterviewMapper interviewMapper;
 
     @Override
@@ -114,6 +118,8 @@ public class InterviewServiceImpl implements InterviewService {
         Interview saved = interviewRepository.save(interview);
 
         updateCandidateStatusFromInterview(candidate, request.getType(), userId);
+
+        notifyInterviewScheduled(workspaceId, candidate, saved);
 
         log.info("Interview scheduled: {} for candidate {} by user {}", request.getType(), candidateId, userId);
         return interviewMapper.toResponse(saved);
@@ -206,7 +212,32 @@ public class InterviewServiceImpl implements InterviewService {
 
         interview.setStatus(InterviewStatus.CANCELLED);
         interviewRepository.save(interview);
+
+        notifyInterviewCancelled(workspaceId, interview.getCandidate(), interview);
+
         log.info("Interview cancelled: {} by user {}", interviewId, userId);
+    }
+
+    @Override
+    public InterviewResponse complete(UUID workspaceId, UUID departmentId, UUID candidateId, UUID interviewId) {
+        UUID userId = SecurityUtils.getCurrentUserId();
+
+        Interview interview = findActiveInterview(workspaceId, departmentId, candidateId, interviewId);
+
+        if (interview.getStatus() == InterviewStatus.COMPLETED) {
+            throw new BadRequestException("Interview is already Completed.");
+        }
+        if (interview.getStatus() == InterviewStatus.CANCELLED) {
+            throw new BadRequestException("Cannot complete a cancelled interview.");
+        }
+
+        interview.setStatus(InterviewStatus.COMPLETED);
+        Interview saved = interviewRepository.save(interview);
+
+        notifyInterviewCompleted(workspaceId, interview.getCandidate(), saved);
+
+        log.info("Interview completed: {} by user {}", interviewId, userId);
+        return interviewMapper.toResponse(saved);
     }
 
     @Override
@@ -421,6 +452,45 @@ public class InterviewServiceImpl implements InterviewService {
         candidate.getStatusHistories().add(history);
         candidateRepository.save(candidate);
         log.info("Candidate status auto-updated: {} â†’ {} due to interview scheduling", previousStatus, targetStatus);
+    }
+
+    private void notifyInterviewScheduled(UUID workspaceId, Candidate candidate, Interview interview) {
+        if (candidate.getRecruiterId() != null) {
+            userRepository.findById(candidate.getRecruiterId()).ifPresent(user -> {
+                CreateNotificationRequest notifReq = new CreateNotificationRequest();
+                notifReq.setRecipientId(user.getId());
+                notifReq.setNotificationType(Notification.NotificationType.INTERVIEW_SCHEDULED);
+                notifReq.setTitle("Interview scheduled");
+                notifReq.setBody(candidate.getFirstName() + " " + candidate.getLastName() + " — " + interview.getType() + " interview scheduled");
+                notificationService.create(workspaceId, notifReq);
+            });
+        }
+    }
+
+    private void notifyInterviewCompleted(UUID workspaceId, Candidate candidate, Interview interview) {
+        if (candidate.getRecruiterId() != null) {
+            userRepository.findById(candidate.getRecruiterId()).ifPresent(user -> {
+                CreateNotificationRequest notifReq = new CreateNotificationRequest();
+                notifReq.setRecipientId(user.getId());
+                notifReq.setNotificationType(Notification.NotificationType.INTERVIEW_COMPLETED);
+                notifReq.setTitle("Interview completed");
+                notifReq.setBody(candidate.getFirstName() + " " + candidate.getLastName() + " — " + interview.getType() + " interview completed");
+                notificationService.create(workspaceId, notifReq);
+            });
+        }
+    }
+
+    private void notifyInterviewCancelled(UUID workspaceId, Candidate candidate, Interview interview) {
+        if (candidate.getRecruiterId() != null) {
+            userRepository.findById(candidate.getRecruiterId()).ifPresent(user -> {
+                CreateNotificationRequest notifReq = new CreateNotificationRequest();
+                notifReq.setRecipientId(user.getId());
+                notifReq.setNotificationType(Notification.NotificationType.INTERVIEW_CANCELLED);
+                notifReq.setTitle("Interview cancelled");
+                notifReq.setBody(candidate.getFirstName() + " " + candidate.getLastName() + " — " + interview.getType() + " interview cancelled");
+                notificationService.create(workspaceId, notifReq);
+            });
+        }
     }
 
     private Interview findActiveInterview(UUID workspaceId, UUID departmentId, UUID candidateId, UUID interviewId) {

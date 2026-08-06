@@ -1,15 +1,13 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Briefcase, Plus, Search, Filter, ArrowUpDown, MoreHorizontal,
-  ExternalLink, Pencil, Archive, Trash2, Building2, Users,
-  Network, FolderKanban, LayoutGrid, List, X,
-  type LucideIcon,
+  Briefcase, Plus, Search, ArrowUpDown, MoreHorizontal,
+  ExternalLink, Pencil, Archive, Trash2, Users,
+  Network, FolderKanban, LayoutGrid, List,
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { Avatar } from '../components/ui/Avatar';
 import { IconButton } from '../components/ui/IconButton';
 import { Tooltip } from '../components/ui/Tooltip';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -295,7 +293,6 @@ export function WorkspaceManagementPage() {
   const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Reset page when filters change
-  const onFilterChange = useCallback((setter: any) => (val: any) => { setPage(1); setter(val); }, []);
 
   const handleAction = useCallback((action: string, ws: WorkspaceSummaryResponse) => {
     switch (action) {

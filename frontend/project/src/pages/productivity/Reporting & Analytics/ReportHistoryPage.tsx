@@ -2,30 +2,22 @@ import { useState, useMemo } from 'react';
 import {
   ArrowLeft,
   Search,
-  Filter,
   ChevronDown,
   Clock,
-  Download,
   Eye,
-  Share2,
-  Trash2,
   MoreHorizontal,
-  Calendar,
-  User,
 } from 'lucide-react';
-import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { Badge } from '../../../components/ui/Badge';
-import { Avatar } from '../../../components/ui/Avatar';
+import { Badge, type Tone } from '../../../components/ui/Badge';
 import { IconButton } from '../../../components/ui/IconButton';
-import { Dropdown, type DropdownItem } from '../../../components/ui/Dropdown';
+import { Dropdown } from '../../../components/ui/Dropdown';
 import { EmptyState } from '../../../components/ui/EmptyState';
-import { Timeline, type TimelineItem } from '../../../components/ui/Timeline';
 import { useToast } from '../../../components/ui/Toast';
 import { reportHistory } from './reports-data';
+import type { ReportHistoryEntry } from './report-types';
 
-type HistoryType = 'all' | 'generated' | 'exported' | 'viewed' | 'shared';
+type HistoryType = 'all' | 'generated' | 'exported' | 'downloaded' | 'viewed' | 'shared' | 'favorited';
 
 export function ReportHistoryPage({ onBack }: { onBack?: () => void }) {
   const { toast } = useToast();
@@ -170,7 +162,7 @@ function StatCard({
 }: {
   label: string;
   value: number;
-  tone: string;
+  tone: 'accent' | 'success' | 'warning' | 'info';
 }) {
   const bgColor = {
     accent: 'bg-accent-50 dark:bg-accent-100 text-accent-700 dark:text-accent-200',
@@ -187,15 +179,17 @@ function StatCard({
   );
 }
 
-function HistoryItem({ entry, icon }: { entry: any; icon: string }) {
-  const typeColor = {
+function HistoryItem({ entry, icon }: { entry: ReportHistoryEntry; icon: string }) {
+  const { toast } = useToast();
+  const typeColor: Record<HistoryType, Tone> = {
+    all: 'accent',
     generated: 'success',
     exported: 'info',
     downloaded: 'accent',
     viewed: 'warning',
     shared: 'accent',
     favorited: 'warning',
-  } as const;
+  };
 
   const actionText: Record<string, string> = {
     generated: 'generated',

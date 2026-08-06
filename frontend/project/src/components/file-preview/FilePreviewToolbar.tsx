@@ -2,7 +2,7 @@ import { FileText, Download, Copy, Share2, ExternalLink, ChevronLeft, ChevronRig
 import { cn } from '../../lib/cn';
 import { IconButton } from '../ui/IconButton';
 import { Badge } from '../ui/Badge';
-import { fileTypeConfig, type PreviewFile, type FileType } from './FilePreviewTypes';
+import { fileTypeConfig, type PreviewFile } from './FilePreviewTypes';
 
 interface FilePreviewToolbarProps {
   file: PreviewFile;

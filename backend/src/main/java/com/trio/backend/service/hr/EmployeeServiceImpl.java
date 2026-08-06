@@ -6,7 +6,9 @@ import com.trio.backend.dto.hr.EmployeeSearchCriteria;
 import com.trio.backend.dto.hr.EmployeeStatistics;
 import com.trio.backend.dto.hr.EmployeeTimelineEntry;
 import com.trio.backend.dto.hr.UpdateEmployeeRequest;
+import com.trio.backend.dto.notification.CreateNotificationRequest;
 import com.trio.backend.entity.Candidate;
+import com.trio.backend.entity.Notification;
 import com.trio.backend.entity.Department;
 import com.trio.backend.entity.Employee;
 import com.trio.backend.entity.EmployeeEventLog;
@@ -24,6 +26,8 @@ import com.trio.backend.repository.EmployeeEventLogRepository;
 import com.trio.backend.repository.EmployeeRepository;
 import com.trio.backend.repository.EmployeeSpecification;
 import com.trio.backend.repository.TeamRepository;
+import com.trio.backend.repository.UserRepository;
+import com.trio.backend.service.NotificationService;
 import com.trio.backend.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +55,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final DepartmentRepository departmentRepository;
     private final TeamRepository teamRepository;
     private final CandidateRepository candidateRepository;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
     private final EmployeeMapper employeeMapper;
 
     @Override
@@ -133,6 +139,8 @@ public class EmployeeServiceImpl implements EmployeeService {
             createEventLog(saved, "CONVERTED_FROM_CANDIDATE", null, candidate.getId().toString(),
                     "Converted from candidate " + candidate.getFirstName() + " " + candidate.getLastName());
         }
+
+        notifyEmployeeCreated(workspaceId, saved);
 
         return employeeMapper.toResponse(saved);
     }
@@ -306,7 +314,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         stats.setProbationCount(probation);
 
         Map<String, Long> byDepartment = new HashMap<>();
-        byDepartment.put(allEmployees.isEmpty() ? "" : allEmployees.get(0).getDepartment().getName(), total);
+        for (Object[] row : employeeRepository.countByDepartmentAcrossWorkspace(workspaceId)) {
+            byDepartment.put((String) row[0], (Long) row[1]);
+        }
         stats.setEmployeesByDepartment(byDepartment);
 
         Map<String, Long> byTeam = new HashMap<>();
@@ -375,6 +385,17 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .description(description)
                 .build();
         employeeEventLogRepository.save(log);
+    }
+
+    private void notifyEmployeeCreated(UUID workspaceId, Employee employee) {
+        userRepository.findByEmail(employee.getEmail()).ifPresent(user -> {
+            CreateNotificationRequest notifReq = new CreateNotificationRequest();
+            notifReq.setRecipientId(user.getId());
+            notifReq.setNotificationType(Notification.NotificationType.EMPLOYEE_CREATED);
+            notifReq.setTitle("Welcome aboard");
+            notifReq.setBody("You have been added as " + employee.getPosition() + " starting " + employee.getStartDate());
+            notificationService.create(workspaceId, notifReq);
+        });
     }
 
     private void trackChanges(Employee employee, String oldDepartment, String oldTeam,

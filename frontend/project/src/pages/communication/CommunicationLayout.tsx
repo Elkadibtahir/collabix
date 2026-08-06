@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Outlet, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { MessageSquare, Hash, Users, Bell, Search, FileText, Plus } from 'lucide-react';
+import { Outlet, useNavigate, useSearchParams } from 'react-router-dom';
+import { MessageSquare, Hash, Bell, Search, FileText, Plus } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { cn } from '../../lib/cn';
 
@@ -16,7 +16,6 @@ export function CommunicationLayout() {
   const [searchParams] = useSearchParams();
   const wsId = searchParams.get('ws') ?? '';
   const navigate = useNavigate();
-  const location = useParams();
   const [activeTab, setActiveTab] = useState('conversations');
 
   const handleTabChange = (tabId: string) => {

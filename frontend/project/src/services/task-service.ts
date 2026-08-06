@@ -60,7 +60,7 @@ export const taskService = {
 
 export const checklistService = {
   list: (wsId: string, deptId: string, projId: string, taskId: string) =>
-    apiClient.get<ChecklistResponse[]>(`${taskBase(wsId, deptId, projId)}/${taskId}/checklists`),
+    apiClient.get<PageResponse<ChecklistResponse>>(`${taskBase(wsId, deptId, projId)}/${taskId}/checklists`),
 
   getById: (wsId: string, deptId: string, projId: string, taskId: string, checklistId: string) =>
     apiClient.get<ChecklistResponse>(`${taskBase(wsId, deptId, projId)}/${taskId}/checklists/${checklistId}`),

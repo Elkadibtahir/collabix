@@ -2,43 +2,30 @@ package com.trio.backend.service;
 
 import com.trio.backend.dto.organisation.handover.CreateHandoverEntryRequest;
 import com.trio.backend.dto.organisation.handover.HandoverEntryResponse;
+import com.trio.backend.dto.organisation.handover.HandoverStatusUpdateRequest;
 import com.trio.backend.dto.organisation.handover.UpdateHandoverEntryRequest;
-import com.trio.backend.entity.HandoverEntry;
-import com.trio.backend.entity.Project;
-import com.trio.backend.entity.Task;
-import com.trio.backend.entity.WorkspaceMember;
-import com.trio.backend.enums.WorkspaceMemberStatus;
-import com.trio.backend.enums.WorkspaceRole;
+import com.trio.backend.entity.*;
+import com.trio.backend.entity.HandoverEntry.HandoverStatus;
+import com.trio.backend.entity.HandoverEntry.Priority;
+import com.trio.backend.entity.HandoverTimelineEvent.TimelineEventType;
 import com.trio.backend.enums.WorkspaceStatus;
 import com.trio.backend.exception.BadRequestException;
 import com.trio.backend.exception.ForbiddenException;
 import com.trio.backend.exception.ResourceNotFoundException;
 import com.trio.backend.mapper.HandoverEntryMapper;
-import com.trio.backend.repository.HandoverEntryRepository;
-import com.trio.backend.repository.ProjectRepository;
-import com.trio.backend.repository.TaskRepository;
-import com.trio.backend.repository.UserRepository;
-import com.trio.backend.repository.WorkspaceMemberRepository;
-import com.trio.backend.repository.WorkspaceRepository;
-import com.trio.backend.security.user.CustomUserDetails;
+import com.trio.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Implementation for HandoverEntry CRUD.
- *
- * <p>Validation chain:</p>
- * <pre>
- * Workspace -> Department -> Project -> Task (optional) -> HandoverEntry
- * </pre>
+ * Implementation for the HandoverEntry workflow.
  */
 @Service
 @RequiredArgsConstructor
@@ -50,204 +37,294 @@ public class HandoverEntryServiceImpl implements HandoverEntryService {
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
-    private final WorkspaceMemberRepository workspaceMemberRepository;
-    private final WorkspaceRepository workspaceRepository;
     private final HandoverEntryMapper handoverEntryMapper;
+    private final HandoverSupport support;
 
     @Override
     @Transactional
-    public HandoverEntryResponse create(
-            UUID workspaceId,
-            UUID departmentId,
-            UUID projectId,
-            CreateHandoverEntryRequest request
-    ) {
+    public HandoverEntryResponse create(UUID workspaceId, CreateHandoverEntryRequest request) {
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
 
-        UUID userId = getAuthenticatedUserId();
-        assertActiveWorkspaceMember(workspaceId, userId);
+        Project project = validateProject(workspaceId, request.getDepartmentId(), request.getProjectId());
 
-        Project project = projectRepository.findByIdAndDepartment_Id(projectId, departmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found."));
+        User receiver = userRepository.findById(request.getReceiverId())
+                .orElseThrow(() -> new ResourceNotFoundException("Receiver not found."));
+        support.assertUserIsActiveMember(workspaceId, receiver.getId(), "Receiver is not an active member of this workspace.");
 
-        if (project.getStatus() != WorkspaceStatus.ACTIVE) {
-            throw new ResourceNotFoundException("Project not found.");
+        User sender = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
+
+        Task task = null;
+        if (request.getTaskId() != null) {
+            task = taskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Task not found."));
+            if (!task.getProject().getId().equals(project.getId())) {
+                throw new BadRequestException("Task does not belong to the given project.");
+            }
         }
 
-        if (!project.getDepartment().getWorkspace().getId().equals(workspaceId)) {
-            throw new ResourceNotFoundException("Project not found.");
-        }
+        HandoverEntry entry = handoverEntryMapper.toEntity(request);
+        entry.setWorkspace(project.getDepartment().getWorkspace());
+        entry.setDepartment(project.getDepartment());
+        entry.setProject(project);
+        entry.setSender(sender);
+        entry.setReceiver(receiver);
+        entry.setTask(task);
+        entry.setStatus(HandoverStatus.DRAFT);
 
-        HandoverEntry handover = handoverEntryMapper.toEntity(request);
-        handover.setWorkspace(project.getDepartment().getWorkspace());
-        handover.setDepartment(project.getDepartment());
-        handover.setProject(project);
-        handover.setUser(userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found.")));
-        handover.setStatus(HandoverEntry.HandoverEntryStatus.ACTIVE);
-
-        HandoverEntry saved = handoverEntryRepository.save(handover);
+        HandoverEntry saved = handoverEntryRepository.save(entry);
+        support.addTimelineEvent(saved, TimelineEventType.CREATED, "Handover created by " + support.userDisplayName(sender), userId);
         return handoverEntryMapper.toResponse(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public HandoverEntryResponse getById(
-            UUID workspaceId,
-            UUID departmentId,
-            UUID projectId,
-            UUID handoverEntryId
-    ) {
-
-        assertActiveWorkspaceMember(workspaceId, getAuthenticatedUserId());
-
-        HandoverEntry handover = handoverEntryRepository.findByIdAndWorkspace(handoverEntryId, workspaceId)
-                .orElseThrow(() -> new ResourceNotFoundException("Handover entry not found."));
-
-        if (handover.getStatus() != HandoverEntry.HandoverEntryStatus.ACTIVE) {
-            throw new ResourceNotFoundException("Handover entry not found.");
-        }
-
-        if (!handover.getProject().getId().equals(projectId)) {
-            throw new ResourceNotFoundException("Handover entry not found.");
-        }
-
-        if (!handover.getDepartment().getId().equals(departmentId)) {
-            throw new ResourceNotFoundException("Handover entry not found.");
-        }
-
-        return handoverEntryMapper.toResponse(handover);
+    public HandoverEntryResponse getById(UUID workspaceId, UUID handoverEntryId) {
+        support.assertActiveWorkspaceMember(workspaceId, support.currentUserId());
+        return handoverEntryMapper.toResponse(findEntry(workspaceId, handoverEntryId));
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<HandoverEntryResponse> list(
             UUID workspaceId,
-            UUID departmentId,
+            HandoverStatus status,
+            Priority priority,
             UUID projectId,
             Pageable pageable
     ) {
+        support.assertActiveWorkspaceMember(workspaceId, support.currentUserId());
+        return handoverEntryRepository.search(workspaceId, status, priority, projectId, pageable)
+                .map(handoverEntryMapper::toResponse);
+    }
 
-        assertActiveWorkspaceMember(workspaceId, getAuthenticatedUserId());
+    @Override
+    @Transactional(readOnly = true)
+    public Page<HandoverEntryResponse> inbox(UUID workspaceId, Pageable pageable) {
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+        return handoverEntryRepository.findInboxPaginated(workspaceId, userId, pageable)
+                .map(handoverEntryMapper::toResponse);
+    }
 
-        Project project = projectRepository.findByIdAndDepartment_Id(projectId, departmentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found."));
-
-        if (project.getStatus() != WorkspaceStatus.ACTIVE) {
-            throw new ResourceNotFoundException("Project not found.");
-        }
-
-        if (!project.getDepartment().getWorkspace().getId().equals(workspaceId)) {
-            throw new ResourceNotFoundException("Project not found.");
-        }
-
-        // Repository supports findByProjectIdPaginated.
-        return handoverEntryRepository.findByProjectIdPaginated(projectId, pageable)
+    @Override
+    @Transactional(readOnly = true)
+    public Page<HandoverEntryResponse> sent(UUID workspaceId, Pageable pageable) {
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+        return handoverEntryRepository.findSentPaginated(workspaceId, userId, pageable)
                 .map(handoverEntryMapper::toResponse);
     }
 
     @Override
     @Transactional
-    public HandoverEntryResponse update(
-            UUID workspaceId,
-            UUID departmentId,
-            UUID projectId,
-            UUID handoverEntryId,
-            UpdateHandoverEntryRequest request
-    ) {
+    public HandoverEntryResponse update(UUID workspaceId, UUID handoverEntryId, UpdateHandoverEntryRequest request) {
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
 
-        UUID userId = getAuthenticatedUserId();
-        assertActiveWorkspaceMember(workspaceId, userId);
-        assertWorkspaceAdminOrOwner(workspaceId, userId);
-
-        HandoverEntry handover = handoverEntryRepository.findByIdAndWorkspace(handoverEntryId, workspaceId)
-                .orElseThrow(() -> new ResourceNotFoundException("Handover entry not found."));
-
-        if (handover.getStatus() != HandoverEntry.HandoverEntryStatus.ACTIVE) {
-            throw new ResourceNotFoundException("Handover entry not found.");
+        HandoverEntry entry = findEntry(workspaceId, handoverEntryId);
+        if (!entry.getSender().getId().equals(userId)) {
+            throw new ForbiddenException("Only the sender can update this handover.");
+        }
+        if (entry.getStatus() != HandoverStatus.DRAFT && entry.getStatus() != HandoverStatus.REJECTED) {
+            throw new BadRequestException("Only DRAFT or REJECTED handovers can be updated.");
         }
 
-        if (!handover.getProject().getId().equals(projectId)) {
-            throw new ResourceNotFoundException("Handover entry not found.");
+        handoverEntryMapper.updateHandoverEntry(request, entry);
+
+        if (request.getReceiverId() != null) {
+            User receiver = userRepository.findById(request.getReceiverId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Receiver not found."));
+            support.assertUserIsActiveMember(workspaceId, receiver.getId(), "Receiver is not an active member of this workspace.");
+            entry.setReceiver(receiver);
+        }
+        if (request.getTaskId() != null) {
+            Task task = taskRepository.findById(request.getTaskId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Task not found."));
+            if (!task.getProject().getId().equals(entry.getProject().getId())) {
+                throw new BadRequestException("Task does not belong to the handover project.");
+            }
+            entry.setTask(task);
         }
 
-        if (!handover.getDepartment().getId().equals(departmentId)) {
-            throw new ResourceNotFoundException("Handover entry not found.");
-        }
-
-        handoverEntryMapper.updateHandoverEntry(request, handover);
-        HandoverEntry saved = handoverEntryRepository.save(handover);
+        HandoverEntry saved = handoverEntryRepository.save(entry);
+        support.addTimelineEvent(saved, TimelineEventType.UPDATED, "Handover updated by " + support.userDisplayName(saved.getSender()), userId);
         return handoverEntryMapper.toResponse(saved);
     }
 
     @Override
     @Transactional
-    public void delete(
-            UUID workspaceId,
-            UUID departmentId,
-            UUID projectId,
-            UUID handoverEntryId
-    ) {
+    public HandoverEntryResponse send(UUID workspaceId, UUID handoverEntryId, HandoverStatusUpdateRequest request) {
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
 
-        UUID userId = getAuthenticatedUserId();
-        assertActiveWorkspaceMember(workspaceId, userId);
-        assertWorkspaceAdminOrOwner(workspaceId, userId);
-
-        HandoverEntry handover = handoverEntryRepository.findByIdAndWorkspace(handoverEntryId, workspaceId)
-                .orElseThrow(() -> new ResourceNotFoundException("Handover entry not found."));
-
-        if (handover.getStatus() == HandoverEntry.HandoverEntryStatus.DELETED) {
-            return; // idempotent
+        HandoverEntry entry = findEntry(workspaceId, handoverEntryId);
+        assertSender(entry, userId);
+        if (entry.getStatus() != HandoverStatus.DRAFT && entry.getStatus() != HandoverStatus.REJECTED) {
+            throw new BadRequestException("Only DRAFT or REJECTED handovers can be sent.");
         }
 
-        if (handover.getStatus() != HandoverEntry.HandoverEntryStatus.ACTIVE) {
-            return; // idempotent for ARCHIVED
+        entry.setStatus(HandoverStatus.PENDING);
+        entry.setSentAt(LocalDateTime.now());
+        HandoverEntry saved = handoverEntryRepository.save(entry);
+
+        support.addTimelineEvent(saved, TimelineEventType.SENT, "Handover sent to " + support.userDisplayName(saved.getReceiver()), userId);
+        support.notifyUser(workspaceId, saved.getReceiver().getId(), Notification.NotificationType.HANDOVER_SENT,
+                "New handover: " + saved.getTitle(), saved.getTitle(), saved.getId());
+
+        return handoverEntryMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public HandoverEntryResponse accept(UUID workspaceId, UUID handoverEntryId, HandoverStatusUpdateRequest request) {
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+
+        HandoverEntry entry = findEntry(workspaceId, handoverEntryId);
+        assertReceiver(entry, userId);
+        if (entry.getStatus() != HandoverStatus.PENDING) {
+            throw new BadRequestException("Only PENDING handovers can be accepted.");
         }
 
-        if (!handover.getProject().getId().equals(projectId)) {
-            throw new ResourceNotFoundException("Handover entry not found.");
+        entry.setStatus(HandoverStatus.ACCEPTED);
+        entry.setAcceptedAt(LocalDateTime.now());
+        HandoverEntry saved = handoverEntryRepository.save(entry);
+
+        support.addTimelineEvent(saved, TimelineEventType.ACCEPTED, "Handover accepted by " + support.userDisplayName(saved.getReceiver()), userId);
+        support.notifyUser(workspaceId, saved.getSender().getId(), Notification.NotificationType.HANDOVER_ACCEPTED,
+                "Handover accepted: " + saved.getTitle(), saved.getTitle(), saved.getId());
+
+        return handoverEntryMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public HandoverEntryResponse reject(UUID workspaceId, UUID handoverEntryId, HandoverStatusUpdateRequest request) {
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+
+        HandoverEntry entry = findEntry(workspaceId, handoverEntryId);
+        assertReceiver(entry, userId);
+        if (entry.getStatus() != HandoverStatus.PENDING) {
+            throw new BadRequestException("Only PENDING handovers can be rejected.");
         }
 
-        if (!handover.getDepartment().getId().equals(departmentId)) {
-            throw new ResourceNotFoundException("Handover entry not found.");
+        entry.setStatus(HandoverStatus.REJECTED);
+        entry.setRejectedAt(LocalDateTime.now());
+        HandoverEntry saved = handoverEntryRepository.save(entry);
+
+        String reason = (request != null && request.getReason() != null && !request.getReason().isBlank())
+                ? ": " + request.getReason()
+                : "";
+        support.addTimelineEvent(saved, TimelineEventType.REJECTED,
+                "Handover rejected by " + support.userDisplayName(saved.getReceiver()) + reason, userId);
+        support.notifyUser(workspaceId, saved.getSender().getId(), Notification.NotificationType.HANDOVER_REJECTED,
+                "Handover rejected: " + saved.getTitle(), saved.getTitle(), saved.getId());
+
+        return handoverEntryMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public HandoverEntryResponse complete(UUID workspaceId, UUID handoverEntryId, HandoverStatusUpdateRequest request) {
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+
+        HandoverEntry entry = findEntry(workspaceId, handoverEntryId);
+        boolean participant = entry.getSender().getId().equals(userId) || entry.getReceiver().getId().equals(userId);
+        if (!participant) {
+            throw new ForbiddenException("Only the sender or receiver can complete this handover.");
+        }
+        if (entry.getStatus() != HandoverStatus.ACCEPTED) {
+            throw new BadRequestException("Only ACCEPTED handovers can be completed.");
         }
 
-        handover.setStatus(HandoverEntry.HandoverEntryStatus.DELETED);
-        handoverEntryRepository.save(handover);
+        entry.setStatus(HandoverStatus.COMPLETED);
+        entry.setCompletedAt(LocalDateTime.now());
+        HandoverEntry saved = handoverEntryRepository.save(entry);
+
+        support.addTimelineEvent(saved, TimelineEventType.COMPLETED, "Handover completed by " + support.userDisplayName(saved.getReceiver()), userId);
+        UUID otherParty = entry.getSender().getId().equals(userId) ? entry.getReceiver().getId() : entry.getSender().getId();
+        support.notifyUser(workspaceId, otherParty, Notification.NotificationType.HANDOVER_COMPLETED,
+                "Handover completed: " + saved.getTitle(), saved.getTitle(), saved.getId());
+
+        return handoverEntryMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public HandoverEntryResponse archive(UUID workspaceId, UUID handoverEntryId, HandoverStatusUpdateRequest request) {
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+
+        HandoverEntry entry = findEntry(workspaceId, handoverEntryId);
+        boolean participant = entry.getSender().getId().equals(userId) || entry.getReceiver().getId().equals(userId);
+        boolean isAdmin = support.isWorkspaceAdminOrOwner(workspaceId, userId);
+        if (!participant && !isAdmin) {
+            throw new ForbiddenException("You do not have permission to archive this handover.");
+        }
+        if (entry.getStatus() == HandoverStatus.ARCHIVED) {
+            return handoverEntryMapper.toResponse(entry);
+        }
+
+        entry.setStatus(HandoverStatus.ARCHIVED);
+        entry.setArchivedAt(LocalDateTime.now());
+        HandoverEntry saved = handoverEntryRepository.save(entry);
+
+        support.addTimelineEvent(saved, TimelineEventType.ARCHIVED, "Handover archived", userId);
+        return handoverEntryMapper.toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID workspaceId, UUID handoverEntryId) {
+        UUID userId = support.currentUserId();
+        support.assertActiveWorkspaceMember(workspaceId, userId);
+
+        HandoverEntry entry = findEntry(workspaceId, handoverEntryId);
+        boolean isSender = entry.getSender().getId().equals(userId);
+        boolean isAdmin = support.isWorkspaceAdminOrOwner(workspaceId, userId);
+        if (!isSender && !isAdmin) {
+            throw new ForbiddenException("You do not have permission to delete this handover.");
+        }
+
+        entry.setDeleted(true);
+        handoverEntryRepository.save(entry);
+        log.info("Handover soft-deleted [ID: {}] by [User: {}]", handoverEntryId, userId);
     }
 
     // ============================================================================
     // Helpers
     // ============================================================================
 
-    private UUID getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null
-                || !authentication.isAuthenticated()
-                || !(authentication.getPrincipal() instanceof CustomUserDetails main)) {
-            throw new BadRequestException("User is not authenticated.");
-        }
-        return main.getId();
+    private HandoverEntry findEntry(UUID workspaceId, UUID handoverEntryId) {
+        return handoverEntryRepository.findByIdAndWorkspace(handoverEntryId, workspaceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Handover not found."));
     }
 
-    private void assertActiveWorkspaceMember(UUID workspaceId, UUID userId) {
-        WorkspaceMember wm = workspaceMemberRepository
-                .findByWorkspaceMemberId_WorkspaceIdAndWorkspaceMemberId_UserId(workspaceId, userId)
-                .orElseThrow(() -> new ForbiddenException("You are not a member of this workspace."));
+    private Project validateProject(UUID workspaceId, UUID departmentId, UUID projectId) {
+        Project project = projectRepository.findByIdAndDepartment_Id(projectId, departmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found."));
+        if (project.getStatus() != WorkspaceStatus.ACTIVE) {
+            throw new ResourceNotFoundException("Project not found.");
+        }
+        if (!project.getDepartment().getWorkspace().getId().equals(workspaceId)) {
+            throw new ResourceNotFoundException("Project not found.");
+        }
+        return project;
+    }
 
-        if (wm.getStatus() != WorkspaceMemberStatus.ACTIVE) {
-            throw new ForbiddenException("You are not an active member of this workspace.");
+    private void assertSender(HandoverEntry entry, UUID userId) {
+        if (!entry.getSender().getId().equals(userId)) {
+            throw new ForbiddenException("Only the sender can perform this action.");
         }
     }
 
-    private void assertWorkspaceAdminOrOwner(UUID workspaceId, UUID userId) {
-        boolean isAdmin = workspaceMemberRepository.existsWithRole(workspaceId, userId, WorkspaceRole.ADMIN);
-        boolean isOwner = workspaceRepository.findById(workspaceId)
-                .map(ws -> ws.getOwner().getId().equals(userId))
-                .orElse(false);
-
-        if (!isAdmin && !isOwner) {
-            throw new ForbiddenException("You do not have permission for this operation.");
+    private void assertReceiver(HandoverEntry entry, UUID userId) {
+        if (!entry.getReceiver().getId().equals(userId)) {
+            throw new ForbiddenException("Only the receiver can perform this action.");
         }
     }
 }
-

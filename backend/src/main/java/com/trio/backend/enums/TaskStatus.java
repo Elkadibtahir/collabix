@@ -8,5 +8,13 @@ public enum TaskStatus {
     BLOCKED,
     COMPLETED,
     ARCHIVED,
-    CANCELLED
+    CANCELLED;
+
+    public boolean isTerminal() {
+        return this == ARCHIVED || this == CANCELLED;
+    }
+
+    public boolean isActive() {
+        return !isTerminal();
+    }
 }

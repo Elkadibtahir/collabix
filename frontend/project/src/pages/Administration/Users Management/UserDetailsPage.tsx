@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   Mail,
   Briefcase,
-  Clock,
   Edit,
   MoreHorizontal,
   Power,
@@ -14,7 +13,6 @@ import {
   Users,
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Avatar } from '../../../components/ui/Avatar';
 import { IconButton } from '../../../components/ui/IconButton';

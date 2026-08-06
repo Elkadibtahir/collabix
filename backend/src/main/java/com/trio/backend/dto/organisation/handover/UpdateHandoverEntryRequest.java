@@ -1,51 +1,32 @@
 package com.trio.backend.dto.organisation.handover;
 
 import com.trio.backend.entity.HandoverEntry;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
- * Request de updated (partial) of a HandoverEntry.
+ * Update request (partial) of a HandoverEntry.
+ *
+ * <p>Only the sender may update a handover that is still in DRAFT or REJECTED state.</p>
  */
 @Getter
 @Setter
 public class UpdateHandoverEntryRequest {
 
-    @NotNull
-    private HandoverEntry.Shift shift;
+    private UUID taskId;
 
-    @NotNull
-    private LocalDateTime passedAt;
+    private UUID receiverId;
 
-    @NotBlank(message = "Work finished is required")
-    private String workFinished;
+    @Size(max = 255, message = "Title must not exceed 255 characters")
+    private String title;
 
-    @NotBlank(message = "Work remaining is required")
-    private String workRemaining;
+    private String content;
 
-    @NotBlank(message = "Difficulties are required")
-    private String difficulties;
+    private HandoverEntry.Priority priority;
 
-    @NotBlank(message = "Blockers are required")
-    private String blockers;
-
-    @NotBlank(message = "Important information is required")
-    private String importantInformation;
-
-    @NotBlank(message = "Priorities are required")
-    private String priorities;
-
-    @NotNull(message = "Time spent is required")
-    private Long timeSpentMinutes;
-
-    @NotNull(message = "Need help is required")
-    private Boolean needHelp;
-
-    private String additionalNotes;
+    private LocalDateTime dueDate;
 }
-

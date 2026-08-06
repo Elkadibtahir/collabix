@@ -3,6 +3,7 @@ package com.trio.backend.dto.ai;
 import com.trio.backend.entity.HandoverJournal;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Getter;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -19,8 +20,6 @@ public class HandoverAIResponse {
     private UUID departmentId;
 
     private UUID projectId;
-
-    private HandoverJournal.Shift shift;
 
     private LocalDateTime journalDate;
 

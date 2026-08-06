@@ -1,6 +1,6 @@
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { BarChart3, FileText, Loader2, AlertCircle, Sparkles, CheckCircle2, Clock, XCircle } from 'lucide-react';
-import { Card, CardBody, CardHeader, CardTitle, CardDescription, SectionHeader } from '../components/ui/Card';
+import { Card, CardBody, SectionHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -55,7 +55,7 @@ export function ReportsPage() {
         />
       ) : (
         <>
-          <SectionHeader title="Report History" description={`${data?.totalElements ?? 0} total reports`} />
+          <SectionHeader title="Report History" description={`${data?.page?.totalElements ?? 0} total reports`} />
           <div className="grid gap-4">
             {reports.map((r) => (
               <Card key={r.reportId} className="hover:shadow-cx-md transition-shadow cursor-pointer" onClick={() => navigate(`/app/ai/report/${r.reportId}`)}>

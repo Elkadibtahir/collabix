@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { FileText, Image, File, Download, Search } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { FileText, Image, File, Download } from 'lucide-react';
 import { Card, CardBody } from '../../components/ui/Card';
-import { Input } from '../../components/ui/Input';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Button } from '../../components/ui/Button';
 import { cn } from '../../lib/cn';
@@ -14,7 +13,6 @@ import { formatRelativeTime, formatFileSize } from '../../lib/format';
 export function SharedFiles() {
   const [searchParams] = useSearchParams();
   const wsId = searchParams.get('ws') ?? '';
-  const navigate = useNavigate();
   const [selectedConvId, setSelectedConvId] = useState<string | undefined>();
 
   const { data: conversations } = useConversationsList(wsId);
@@ -104,6 +102,7 @@ export function SharedFiles() {
                     </div>
                     <div className="flex items-center gap-1.5 mt-2 text-2xs text-text-tertiary">
                       <Avatar
+                        name={`${msg.senderFirstName} ${msg.senderLastName}`}
                         src={msg.senderProfilePicture}
                         alt={`${msg.senderFirstName} ${msg.senderLastName}`}
                         size="xs"

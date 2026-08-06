@@ -1,6 +1,5 @@
 import { Sparkles, Lightbulb, Target, ListChecks, AlertTriangle } from 'lucide-react';
 import { cn } from '../../../lib/cn';
-import { Badge } from '../../ui/Badge';
 
 interface AIBusinessResultPanelProps {
   summary: string;

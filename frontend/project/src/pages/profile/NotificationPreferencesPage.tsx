@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Bell, BellOff, Mail, Smartphone, Clock, Briefcase, FolderKanban, CheckSquare, AtSign, MessageSquare, FileText, BookOpen, BarChart3, Shield, Settings, Loader2 } from 'lucide-react';
+import { Bell, Mail, Clock, Briefcase, FolderKanban, CheckSquare, AtSign, MessageSquare, FileText, BookOpen, BarChart3, Shield, Settings, Loader2 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Radio, RadioGroup } from '../../components/ui/Radio';

@@ -89,7 +89,7 @@ public class Task extends AuditableEntity {
     @PrePersist
     private void prePersist() {
         if (status == null) {
-            status = TaskStatus.TODO;
+            status = TaskStatus.ACTIVE;
         }
     }
 }

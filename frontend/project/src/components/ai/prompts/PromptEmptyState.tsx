@@ -1,4 +1,4 @@
-import { Search, Heart, FolderKanban, BookMarked, Sparkles } from 'lucide-react';
+import { Search, Heart, FolderKanban, BookMarked } from 'lucide-react';
 import { AIEmptyState } from '../AIEmptyState';
 import { promptCategories, type PromptCategoryId } from './PromptTypes';
 

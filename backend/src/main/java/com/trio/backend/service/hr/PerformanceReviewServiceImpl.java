@@ -27,6 +27,7 @@ import com.trio.backend.repository.EmployeeRepository;
 import com.trio.backend.repository.PerformanceReviewRepository;
 import com.trio.backend.repository.PerformanceReviewSpecification;
 import com.trio.backend.repository.TeamRepository;
+import com.trio.backend.repository.UserRepository;
 import com.trio.backend.service.NotificationService;
 import com.trio.backend.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,7 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
     private final TeamRepository teamRepository;
     private final EmployeeEventLogRepository employeeEventLogRepository;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
     private final PerformanceReviewMapper reviewMapper;
 
     @Override
@@ -70,7 +72,7 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
         }
 
         if (reviewRepository.existsByEmployee_IdAndReviewPeriodAndReviewDateAndStatusNot(
-                request.getEmployeeId(), request.getReviewPeriod().name(), request.getReviewDate(), ReviewStatus.ARCHIVED)) {
+                request.getEmployeeId(), request.getReviewPeriod(), request.getReviewDate(), ReviewStatus.ARCHIVED)) {
             throw new ConflictException("A review already exists for this employee in the given period.");
         }
 
@@ -113,12 +115,8 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
         createEventLog(employee, "REVIEW_CREATED", null, saved.getId().toString(),
                 "Performance review created for " + employee.getFirstName() + " " + employee.getLastName());
 
-        CreateNotificationRequest notifReq = new CreateNotificationRequest();
-        notifReq.setRecipientId(reviewer.getId());
-        notifReq.setNotificationType(Notification.NotificationType.REVIEW_ASSIGNED);
-        notifReq.setTitle("Review assigned");
-        notifReq.setBody("A performance review for " + employee.getFirstName() + " " + employee.getLastName() + " has been assigned to you.");
-        notificationService.create(workspaceId, notifReq);
+        notifyEmployee(workspaceId, reviewer, Notification.NotificationType.REVIEW_ASSIGNED, "Review assigned",
+                "A performance review for " + employee.getFirstName() + " " + employee.getLastName() + " has been assigned to you.");
 
         return reviewMapper.toResponse(saved);
     }
@@ -213,12 +211,8 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
         createEventLog(review.getEmployee(), "REVIEW_SUBMITTED", null, reviewId.toString(),
                 "Performance review submitted for " + review.getEmployee().getFirstName() + " " + review.getEmployee().getLastName());
 
-        CreateNotificationRequest notifReq = new CreateNotificationRequest();
-        notifReq.setRecipientId(review.getEmployee().getId());
-        notifReq.setNotificationType(Notification.NotificationType.REVIEW_SUBMITTED);
-        notifReq.setTitle("Review submitted");
-        notifReq.setBody("Your performance review has been submitted for approval.");
-        notificationService.create(workspaceId, notifReq);
+        notifyEmployee(workspaceId, review.getEmployee(), Notification.NotificationType.REVIEW_SUBMITTED, "Review submitted",
+                "Your performance review has been submitted for approval.");
 
         return reviewMapper.toResponse(saved);
     }
@@ -249,12 +243,8 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                 ? " Performance level: " + review.getPerformanceLevel().name()
                 : "";
 
-        CreateNotificationRequest notifReq = new CreateNotificationRequest();
-        notifReq.setRecipientId(review.getEmployee().getId());
-        notifReq.setNotificationType(Notification.NotificationType.REVIEW_APPROVED);
-        notifReq.setTitle("Review approved");
-        notifReq.setBody("Your performance review has been approved." + levelMsg);
-        notificationService.create(workspaceId, notifReq);
+        notifyEmployee(workspaceId, review.getEmployee(), Notification.NotificationType.REVIEW_APPROVED, "Review approved",
+                "Your performance review has been approved." + levelMsg);
 
         return reviewMapper.toResponse(saved);
     }
@@ -282,12 +272,8 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
         createEventLog(review.getEmployee(), "REVIEW_REJECTED", null, reviewId.toString(),
                 "Performance review rejected for " + review.getEmployee().getFirstName() + " " + review.getEmployee().getLastName() + ". Reason: " + reason);
 
-        CreateNotificationRequest notifReq = new CreateNotificationRequest();
-        notifReq.setRecipientId(review.getEmployee().getId());
-        notifReq.setNotificationType(Notification.NotificationType.REVIEW_REJECTED);
-        notifReq.setTitle("Review rejected");
-        notifReq.setBody("Your performance review has been rejected. Reason: " + reason);
-        notificationService.create(workspaceId, notifReq);
+        notifyEmployee(workspaceId, review.getEmployee(), Notification.NotificationType.REVIEW_REJECTED, "Review rejected",
+                "Your performance review has been rejected. Reason: " + reason);
 
         return reviewMapper.toResponse(saved);
     }
@@ -467,5 +453,17 @@ public class PerformanceReviewServiceImpl implements PerformanceReviewService {
                 .description(description)
                 .build();
         employeeEventLogRepository.save(log);
+    }
+
+    private void notifyEmployee(UUID workspaceId, Employee employee, Notification.NotificationType type,
+                                String title, String body) {
+        userRepository.findByEmail(employee.getEmail()).ifPresent(user -> {
+            CreateNotificationRequest notifReq = new CreateNotificationRequest();
+            notifReq.setRecipientId(user.getId());
+            notifReq.setNotificationType(type);
+            notifReq.setTitle(title);
+            notifReq.setBody(body);
+            notificationService.create(workspaceId, notifReq);
+        });
     }
 }

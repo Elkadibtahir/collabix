@@ -7,7 +7,7 @@ import { Button } from '../../../components/ui/Button';
 import { useCreateConversation } from '../../../services/conversation-hooks';
 import type { ConversationType } from '../../../types/communication';
 
-interface CreateChannelModalProps extends Pick<ModalProps, 'open' | 'onClose'> {}
+type CreateChannelModalProps = Pick<ModalProps, 'open' | 'onClose'>;
 
 export function CreateChannelModal({ open, onClose }: CreateChannelModalProps) {
   const [searchParams] = useSearchParams();

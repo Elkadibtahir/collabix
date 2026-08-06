@@ -1,4 +1,3 @@
-import { cn } from '../../../lib/cn';
 import { Avatar } from '../../ui/Avatar';
 
 interface ConversationMessageUserProps {

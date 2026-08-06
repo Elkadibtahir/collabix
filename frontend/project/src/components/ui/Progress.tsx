@@ -6,7 +6,7 @@ export interface ProgressProps {
   value: number;
   max?: number;
   tone?: Tone;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   className?: string;
 }
@@ -21,6 +21,7 @@ const toneClasses: Record<Tone, string> = {
 };
 
 const sizeClasses = {
+  xs: 'h-0.5',
   sm: 'h-1',
   md: 'h-2',
   lg: 'h-2.5',

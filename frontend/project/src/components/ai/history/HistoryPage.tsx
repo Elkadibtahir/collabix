@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Clock, Star, RefreshCw } from 'lucide-react';
+import { Clock, Star } from 'lucide-react';
 import { HistoryHeader } from './HistoryHeader';
 import { HistorySearch } from './HistorySearch';
 import { HistoryFilters } from './HistoryFilters';
@@ -10,9 +10,10 @@ import { HistoryEmptyState } from './HistoryEmptyState';
 import { HistoryLoading } from './HistoryLoading';
 import { HistoryErrorCard } from './HistoryErrorCard';
 import { type HistoryItem, type ActivityCategory } from './HistoryTypes';
+import { type ReportingResponse } from '../../../services/reporting-ai-service';
 import { useAIReportHistory } from '../../../services/reporting-ai-hooks';
 
-function mapReportToHistoryItem(report: any): HistoryItem {
+function mapReportToHistoryItem(report: ReportingResponse): HistoryItem {
   const date = report.generationDate ? new Date(report.generationDate) : new Date();
   const now = new Date();
   const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
@@ -43,7 +44,6 @@ export function HistoryPage({
   workspaceId?: string;
 }) {
   const [searchParams] = useSearchParams();
-  const wsId = workspaceId || searchParams.get('ws') || '';
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<ActivityCategory | 'all'>('all');
   const [timeFilter, setTimeFilter] = useState('all-time');

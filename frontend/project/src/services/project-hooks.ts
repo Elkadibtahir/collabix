@@ -7,10 +7,8 @@ import {
   deleteProject,
   restoreProject,
   listArchivedProjects,
-  type CreateProjectRequest,
-  type UpdateProjectRequest,
-  type ProjectResponse,
 } from './project-service';
+import type { CreateProjectRequest, UpdateProjectRequest, ProjectResponse } from '../pages/projects/projects-types';
 import type { PageResponse } from '../types/api';
 
 const projectKeys = {

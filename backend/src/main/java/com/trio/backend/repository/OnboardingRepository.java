@@ -19,8 +19,6 @@ public interface OnboardingRepository extends JpaRepository<Onboarding, UUID>,
 
     Optional<Onboarding> findByIdAndEmployee_Department_Id(UUID id, UUID departmentId);
 
-    boolean existsByEmployee_Id(UUID employeeId);
-
     boolean existsByEmployee_IdAndStatusNot(UUID employeeId, OnboardingStatus status);
 
     long countByEmployee_Department_Id(UUID departmentId);
@@ -41,4 +39,10 @@ public interface OnboardingRepository extends JpaRepository<Onboarding, UUID>,
 
     @Query("SELECT o.status, COUNT(o) FROM Onboarding o WHERE o.employee.department.id = :departmentId GROUP BY o.status")
     List<Object[]> countByStatusGrouped(@Param("departmentId") UUID departmentId);
+
+    @Query("SELECT o.employee.department.name, COUNT(o) FROM Onboarding o WHERE o.employee.department.workspace.id = :workspaceId GROUP BY o.employee.department.name ORDER BY COUNT(o) DESC")
+    List<Object[]> countByDepartmentAcrossWorkspace(@Param("workspaceId") UUID workspaceId);
+
+    @Query("SELECT COUNT(t), SUM(CASE WHEN t.status = 'COMPLETED' THEN 1 ELSE 0 END) FROM OnboardingTask t JOIN t.onboarding o WHERE o.employee.department.id = :departmentId GROUP BY t.onboarding.id")
+    List<Object[]> findTaskCompletionGroupsByDepartmentId(@Param("departmentId") UUID departmentId);
 }

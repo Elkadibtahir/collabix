@@ -4,7 +4,6 @@ import { User, Settings, Shield, Palette, Bell, Monitor, Clock, ChevronRight, Me
 import { cn } from '../../lib/cn';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
-import { Card } from '../ui/Card';
 import { useAuth } from '../../lib/auth-context';
 
 const navItems = [

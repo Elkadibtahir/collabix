@@ -13,7 +13,6 @@ import {
   BookMarked,
 } from 'lucide-react';
 import { cn } from '../../../lib/cn';
-import { Avatar } from '../../ui/Avatar';
 import { IconButton } from '../../ui/IconButton';
 import { type Conversation } from './ConversationTypes';
 

@@ -2,18 +2,13 @@ import { useState } from 'react';
 import {
   Bell,
   BellRing,
-  BellOff,
-  Mail,
-  Smartphone,
-  Clock,
   Save,
   Check,
   Info,
 } from 'lucide-react';
-import { Card, CardBody, CardHeader, CardTitle } from '../../components/ui/Card';
+import { Card, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Toggle } from '../../components/ui/Toggle';
-import { Select } from '../../components/ui/Select';
 import { Badge } from '../../components/ui/Badge';
 import { cn } from '../../lib/cn';
 

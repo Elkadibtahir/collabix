@@ -136,7 +136,7 @@ export interface ChecklistResponse {
 export interface ChecklistItemResponse {
   id: string;
   checklistId: string;
-  title: string;
+  content: string;
   completed: boolean;
   sortOrder: number;
   status: BackendActivityStatus;
@@ -154,17 +154,17 @@ export interface UpdateChecklistRequest {
 }
 
 export interface CreateChecklistItemRequest {
-  title: string;
+  content: string;
 }
 
 export interface UpdateChecklistItemRequest {
-  title?: string;
+  content?: string;
   completed?: boolean;
   sortOrder?: number;
 }
 
 const BACKEND_STATUS_MAP: Record<BackendTaskStatus, TaskStatus> = {
-  ACTIVE: 'in-progress',
+  ACTIVE: 'todo',
   TODO: 'todo',
   IN_PROGRESS: 'in-progress',
   IN_REVIEW: 'in-review',
@@ -174,8 +174,8 @@ const BACKEND_STATUS_MAP: Record<BackendTaskStatus, TaskStatus> = {
   CANCELLED: 'cancelled',
 };
 
-const FRONTEND_STATUS_MAP: Record<TaskStatus, BackendTaskStatus> = {
-  'todo': 'TODO',
+export const FRONTEND_STATUS_MAP: Record<TaskStatus, BackendTaskStatus> = {
+  'todo': 'ACTIVE',
   'in-progress': 'IN_PROGRESS',
   'in-review': 'IN_REVIEW',
   'blocked': 'BLOCKED',
@@ -356,6 +356,7 @@ export interface Task {
   deadline?: string;
   estimatedTime?: number;
   actualTime?: number;
+  progress?: number;
   comments: Comment[];
   attachments: Attachment[];
   activity: ActivityEvent[];

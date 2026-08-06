@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Send, Paperclip, Pin, MoreHorizontal, UserPlus, Hash, ArrowLeft, Loader2 } from 'lucide-react';
+import { Send, Paperclip, Pin, MoreHorizontal, UserPlus, Hash, Loader2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Avatar } from '../../components/ui/Avatar';
@@ -156,6 +156,7 @@ function MessageBubble({ message }: { message: MessageResponse }) {
   return (
     <div className={cn('flex items-start gap-3 group', isDeleted && 'opacity-50')}>
       <Avatar
+        name={`${message.senderFirstName} ${message.senderLastName}`}
         src={message.senderProfilePicture}
         alt={`${message.senderFirstName} ${message.senderLastName}`}
         size="sm"

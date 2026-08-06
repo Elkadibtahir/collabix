@@ -58,6 +58,7 @@ export interface EmployeeSkillStatistics {
   averageSkillsPerEmployee: number;
   skillsByCategory: Record<string, number>;
   skillsByLevel: Record<string, number>;
+  topSkills?: Array<{ skillName: string; category: string; level: string; count: number }>;
 }
 
 function base(wsId: string, deptId: string, employeeId: string) {

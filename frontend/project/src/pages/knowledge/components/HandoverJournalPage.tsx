@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react';
 import {
   Search,
-  Plus,
-  Filter,
   ChevronDown,
   Eye,
   Download,
@@ -42,23 +40,27 @@ interface FiltersType {
 /* ---------- Mapper: backend DTO → frontend shape ---------- */
 
 function mapJournalToReport(j: HandoverJournalResponse | HandoverAIResponse) {
+  const id = 'id' in j ? j.id : j.journalId;
+  const journalDate = j.journalDate;
+  const generationStatus = j.generationStatus;
+
   return {
-    id: j.id ?? j.journalId ?? '',
-    reportNumber: `HO-${(j as any).journalDate?.substring(0, 10) ?? new Date().toISOString().substring(0, 10)}-${(j.id ?? j.journalId ?? '').substring(0, 4)}`,
-    department: (j as any).departmentId ?? '',
+    id,
+    reportNumber: `HO-${journalDate ? journalDate.substring(0, 10) : j.createdAt.substring(0, 10)}-${id.substring(0, 4)}-${new Date().toISOString().substring(0, 10)}`,
+    department: j.departmentId ?? '',
     team: '',
-    project: (j as any).projectId ?? '',
-    shift: j.shift === 'MORNING' ? 'morning' as const : 'evening' as const,
-    date: (j as any).journalDate ?? (j as any).logDate ?? j.createdAt?.substring(0, 10) ?? '',
-    generatedAt: (j as any).generationDate ?? j.createdAt ?? '',
-    status: (j.generationStatus === 'GENERATED' ? 'completed' : j.generationStatus === 'FAILED' ? 'archived' : 'pending') as 'pending' | 'completed' | 'archived',
+    project: j.projectId ?? '',
+    shift: 'evening' as const,
+    date: journalDate,
+    generatedAt: j.generationDate ?? j.createdAt,
+    status: generationStatus === 'GENERATED' ? 'completed' : generationStatus === 'FAILED' ? 'archived' : 'pending',
     submittedEntries: 0,
     contributors: 0,
     completedTasks: 0,
     pendingTasks: 0,
     blockedTasks: 0,
     criticalIssues: 0,
-    overallProgress: j.generationStatus === 'GENERATED' ? 100 : j.generationStatus === 'FAILED' ? 0 : 50,
+    overallProgress: generationStatus === 'GENERATED' ? 100 : generationStatus === 'FAILED' ? 0 : 50,
   };
 }
 
@@ -145,7 +147,7 @@ export function HandoverJournalPage({
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <AlertCircle className="h-12 w-12 text-danger-500" />
         <p className="text-body font-medium text-text-primary">Failed to load handover journals</p>
-        <p className="text-caption text-text-tertiary">{(error as any)?.message ?? 'An unexpected error occurred'}</p>
+        <p className="text-caption text-text-tertiary">{(error as Error)?.message ?? 'An unexpected error occurred'}</p>
         <Button onClick={() => window.location.reload()}>Retry</Button>
       </div>
     );

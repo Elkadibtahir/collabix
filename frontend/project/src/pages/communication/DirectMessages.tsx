@@ -66,6 +66,7 @@ export function DirectMessages() {
                 >
                   <div className="relative shrink-0">
                     <Avatar
+                      name={conv.name}
                       alt={conv.name}
                       size="sm"
                       fallback={conv.name.split(',')[0]?.slice(0, 2) ?? '?'}

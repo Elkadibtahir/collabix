@@ -19,7 +19,7 @@ public class OnboardingStatistics {
     private long overdueTasks;
     private double averageCompletionDays;
     private double CompletionRate;
-    private double averagecompletionPercentage;
+    private double averageCompletionPercentage;
     private Map<String, Long> onboardingsByDepartment;
     private Map<String, Long> onboardingsByStatus;
 }

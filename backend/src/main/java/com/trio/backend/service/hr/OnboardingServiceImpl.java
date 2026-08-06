@@ -8,7 +8,9 @@ import com.trio.backend.dto.hr.OnboardingStatistics;
 import com.trio.backend.dto.hr.OnboardingTaskResponse;
 import com.trio.backend.dto.hr.UpdateOnboardingRequest;
 import com.trio.backend.dto.hr.UpdateOnboardingTaskRequest;
+import com.trio.backend.dto.notification.CreateNotificationRequest;
 import com.trio.backend.entity.Employee;
+import com.trio.backend.entity.Notification;
 import com.trio.backend.entity.EmployeeEventLog;
 import com.trio.backend.entity.Onboarding;
 import com.trio.backend.entity.OnboardingTask;
@@ -27,6 +29,8 @@ import com.trio.backend.repository.EmployeeRepository;
 import com.trio.backend.repository.OnboardingRepository;
 import com.trio.backend.repository.OnboardingSpecification;
 import com.trio.backend.repository.OnboardingTaskRepository;
+import com.trio.backend.repository.UserRepository;
+import com.trio.backend.service.NotificationService;
 import com.trio.backend.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +58,8 @@ public class OnboardingServiceImpl implements OnboardingService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final EmployeeEventLogRepository employeeEventLogRepository;
+    private final UserRepository userRepository;
+    private final NotificationService notificationService;
     private final OnboardingMapper onboardingMapper;
     private final OnboardingTaskMapper taskMapper;
 
@@ -62,7 +68,7 @@ public class OnboardingServiceImpl implements OnboardingService {
         UUID userId = SecurityUtils.getCurrentUserId();
         Employee employee = findActiveEmployee(workspaceId, departmentId, request.getEmployeeId());
 
-        if (onboardingRepository.existsByEmployee_Id(request.getEmployeeId())) {
+        if (onboardingRepository.existsByEmployee_IdAndStatusNot(request.getEmployeeId(), OnboardingStatus.CANCELLED)) {
             throw new ConflictException("An onboarding process already exists for this employee.");
         }
 
@@ -71,22 +77,39 @@ public class OnboardingServiceImpl implements OnboardingService {
             throw new BadRequestException("Expected Completion date cannot be before start date.");
         }
 
-        Onboarding onboarding = Onboarding.builder()
-                .employee(employee)
-                .status(OnboardingStatus.NOT_STARTED)
-                .startDate(request.getStartDate())
-                .expectedCompletionDate(request.getExpectedCompletionDate())
-                .assignedHrId(request.getAssignedHrId())
-                .assignedManagerId(request.getAssignedManagerId())
-                .notes(request.getNotes())
-                .build();
-
-        Onboarding saved = onboardingRepository.save(onboarding);
+        Onboarding saved = onboardingRepository.findByEmployee_Id(request.getEmployeeId())
+                .filter(onboarding -> onboarding.getStatus() == OnboardingStatus.CANCELLED)
+                .map(onboarding -> {
+                    onboarding.setStatus(OnboardingStatus.NOT_STARTED);
+                    onboarding.setStartDate(request.getStartDate());
+                    onboarding.setExpectedCompletionDate(request.getExpectedCompletionDate());
+                    onboarding.setActualCompletionDate(null);
+                    onboarding.setAssignedHrId(request.getAssignedHrId());
+                    onboarding.setAssignedManagerId(request.getAssignedManagerId());
+                    onboarding.setNotes(request.getNotes());
+                    onboarding.getTasks().clear();
+                    return onboardingRepository.save(onboarding);
+                })
+                .orElseGet(() -> {
+                    Onboarding onboarding = Onboarding.builder()
+                            .employee(employee)
+                            .status(OnboardingStatus.NOT_STARTED)
+                            .startDate(request.getStartDate())
+                            .expectedCompletionDate(request.getExpectedCompletionDate())
+                            .assignedHrId(request.getAssignedHrId())
+                            .assignedManagerId(request.getAssignedManagerId())
+                            .notes(request.getNotes())
+                            .build();
+                    return onboardingRepository.save(onboarding);
+                });
         log.info("Onboarding created for employee {} by user {}",
                 employee.getId(), userId);
 
         createEventLog(employee, "ONBOARDING_CREATED", null, saved.getId().toString(),
                 "Onboarding started for " + employee.getFirstName() + " " + employee.getLastName());
+
+        notifyOnboarding(workspaceId, employee, Notification.NotificationType.ONBOARDING_STARTED,
+                "Onboarding started", "Your onboarding has started. Welcome to the team!");
 
         return onboardingMapper.toResponse(saved);
     }
@@ -127,6 +150,8 @@ public class OnboardingServiceImpl implements OnboardingService {
                 onboarding.setActualCompletionDate(LocalDate.now());
                 createEventLog(employee, "ONBOARDING_COMPLETED", oldStatus.name(), request.getStatus().name(),
                         "Onboarding Completed for " + employee.getFirstName() + " " + employee.getLastName());
+                notifyOnboarding(workspaceId, employee, Notification.NotificationType.ONBOARDING_COMPLETED,
+                        "Onboarding completed", "Your onboarding has been completed. Welcome aboard!");
             }
         }
         if (request.getStartDate() != null) {
@@ -355,7 +380,22 @@ public class OnboardingServiceImpl implements OnboardingService {
                     .orElse(0);
         }
         stats.setAverageCompletionDays(avgDays);
-        stats.setAveragecompletionPercentage(0);
+
+        double avgTaskCompletion = 0;
+        List<Object[]> taskGroups = onboardingRepository.findTaskCompletionGroupsByDepartmentId(departmentId);
+        if (!taskGroups.isEmpty()) {
+            double sum = 0, n = 0;
+            for (Object[] row : taskGroups) {
+                long taskTotal = (Long) row[0];
+                long completed = ((Number) row[1]).longValue();
+                if (taskTotal > 0) {
+                    sum += (double) completed / taskTotal * 100;
+                    n++;
+                }
+            }
+            avgTaskCompletion = n > 0 ? sum / n : 0;
+        }
+        stats.setAverageCompletionPercentage(avgTaskCompletion);
 
         Map<String, Long> byStatus = new HashMap<>();
         for (Object[] row : onboardingRepository.countByStatusGrouped(departmentId)) {
@@ -363,7 +403,11 @@ public class OnboardingServiceImpl implements OnboardingService {
         }
         stats.setOnboardingsByStatus(byStatus);
 
-        stats.setOnboardingsByDepartment(new HashMap<>());
+        Map<String, Long> byDepartment = new HashMap<>();
+        for (Object[] row : onboardingRepository.countByDepartmentAcrossWorkspace(workspaceId)) {
+            byDepartment.put((String) row[0], (Long) row[1]);
+        }
+        stats.setOnboardingsByDepartment(byDepartment);
 
         return stats;
     }
@@ -407,5 +451,17 @@ public class OnboardingServiceImpl implements OnboardingService {
                 .description(description)
                 .build();
         employeeEventLogRepository.save(log);
+    }
+
+    private void notifyOnboarding(UUID workspaceId, Employee employee, Notification.NotificationType type,
+                                  String title, String body) {
+        userRepository.findByEmail(employee.getEmail()).ifPresent(user -> {
+            CreateNotificationRequest notifReq = new CreateNotificationRequest();
+            notifReq.setRecipientId(user.getId());
+            notifReq.setNotificationType(type);
+            notifReq.setTitle(title);
+            notifReq.setBody(body);
+            notificationService.create(workspaceId, notifReq);
+        });
     }
 }

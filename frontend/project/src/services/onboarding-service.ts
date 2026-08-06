@@ -82,8 +82,8 @@ function base(wsId: string, deptId: string) {
 }
 
 export const onboardingService = {
-  list: (wsId: string, deptId: string) =>
-    apiClient.get<PageResponse<OnboardingResponse>>(`${base(wsId, deptId)}`),
+  list: (wsId: string, deptId: string, params?: { page?: number; size?: number; keyword?: string; status?: string }) =>
+    apiClient.get<PageResponse<OnboardingResponse>>(`${base(wsId, deptId)}`, { params }),
 
   getById: (wsId: string, deptId: string, onboardingId: string) =>
     apiClient.get<OnboardingResponse>(`${base(wsId, deptId)}/${onboardingId}`),

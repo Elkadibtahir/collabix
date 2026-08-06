@@ -273,7 +273,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
                     .average()
                     .orElse(0);
         }
-        stats.setAveragecompletionPercentage(avgPct);
+        stats.setAverageCompletionPercentage(avgPct);
 
         Map<String, Long> byStatus = new HashMap<>();
         for (Object[] row : securityAuditRepository.countByStatusGrouped(departmentId)) {

@@ -24,6 +24,7 @@ import com.trio.backend.repository.AttendanceSpecification;
 import com.trio.backend.repository.DepartmentRepository;
 import com.trio.backend.repository.EmployeeEventLogRepository;
 import com.trio.backend.repository.EmployeeRepository;
+import com.trio.backend.repository.UserRepository;
 import com.trio.backend.service.NotificationService;
 import com.trio.backend.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     private final DepartmentRepository departmentRepository;
     private final EmployeeEventLogRepository employeeEventLogRepository;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
     private final AttendanceMapper attendanceMapper;
 
     @Override
@@ -196,12 +198,9 @@ public class AttendanceServiceImpl implements AttendanceService {
         createEventLog(saved.getEmployee(), "ATTENDANCE_CORRECTED", null, attendanceId.toString(),
                 "Attendance correctd for " + saved.getEmployee().getFirstName() + " " + saved.getEmployee().getLastName());
 
-        CreateNotificationRequest notifReq = new CreateNotificationRequest();
-        notifReq.setRecipientId(saved.getEmployee().getId());
-        notifReq.setNotificationType(Notification.NotificationType.ATTENDANCE_CORRECTED);
-        notifReq.setTitle("Attendance correctd");
-        notifReq.setBody("Attendance record for " + saved.getDate() + " has been correctd.");
-        notificationService.create(workspaceId, notifReq);
+        notifyEmployee(workspaceId, saved.getEmployee(), Notification.NotificationType.ATTENDANCE_CORRECTED,
+                "Attendance correctd",
+                "Attendance record for " + saved.getDate() + " has been correctd.");
 
         return attendanceMapper.toResponse(saved);
     }
@@ -326,5 +325,17 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .description(description)
                 .build();
         employeeEventLogRepository.save(log);
+    }
+
+    private void notifyEmployee(UUID workspaceId, Employee employee, Notification.NotificationType type,
+                                String title, String body) {
+        userRepository.findByEmail(employee.getEmail()).ifPresent(user -> {
+            CreateNotificationRequest notifReq = new CreateNotificationRequest();
+            notifReq.setRecipientId(user.getId());
+            notifReq.setNotificationType(type);
+            notifReq.setTitle(title);
+            notifReq.setBody(body);
+            notificationService.create(workspaceId, notifReq);
+        });
     }
 }

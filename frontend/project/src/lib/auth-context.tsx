@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from 'react';
-import { apiClient } from './api';
 import { onAuthEvent, type AuthEvent } from './auth-events';
 import { authService } from '../services/auth-service';
-import type { LoginResponse, UserResponse, RoleName } from '../types';
+import type { UserResponse } from '../types';
 
 /* ---------- JWT Decode (minimal, no library needed) ---------- */
 
@@ -31,6 +30,11 @@ export interface User {
   lastName: string;
   roles: string[];
   permissions: string[];
+  memberType?: string;
+  departmentId?: string;
+  departmentName?: string;
+  teamId?: string;
+  teamName?: string;
 }
 
 export interface AuthState {
@@ -74,6 +78,11 @@ function mapUserResponse(r: UserResponse, token: string): User {
     lastName: r.lastName,
     roles: r.role ? [r.role] : [],
     permissions: extractPermissions(token),
+    memberType: r.memberType,
+    departmentId: r.departmentId,
+    departmentName: r.departmentName,
+    teamId: r.teamId,
+    teamName: r.teamName,
   };
 }
 

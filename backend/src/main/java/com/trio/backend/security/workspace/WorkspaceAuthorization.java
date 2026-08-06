@@ -30,6 +30,7 @@ import java.util.UUID;
 public class WorkspaceAuthorization {
 
     private static final String SUPER_ADMIN_AUTHORITY = "ROLE_SUPER_ADMIN";
+    private static final String MANAGER_AUTHORITY = "ROLE_MANAGER";
 
     private final WorkspaceMemberRepository workspaceMemberRepository;
     private final TeamMemberRepository teamMemberRepository;
@@ -74,6 +75,48 @@ public class WorkspaceAuthorization {
         }
 
         return hasActiveRoleInWorkspace(workspaceId, authentication, WorkspaceRole.OWNER);
+    }
+
+    /**
+     * Checks whether the authenticated user can write HR data (employees, candidates,
+     * interviews, reviews, attendance, onboarding, documents, skills, notes) for a department.
+     *
+     * <p>Workspace ADMIN/OWNER can manage HR data for any department. A global MANAGER
+     * can only manage HR data for their own primary department. Super admins bypass all checks.</p>
+     *
+     * @param workspaceId tenant identifier
+     * @param departmentId department identifier
+     * @param authentication spring security authentication
+     * @return true if allowed, false otherwise
+     */
+    public boolean canManageDepartmentHR(UUID workspaceId, UUID departmentId, Authentication authentication) {
+        if (isSuperAdmin(authentication)) {
+            return true;
+        }
+
+        if (!canViewWorkspace(workspaceId, authentication)) {
+            return false;
+        }
+
+        // Workspace ADMIN/OWNER can manage HR data for any department
+        if (canUpdateWorkspace(workspaceId, authentication)) {
+            return true;
+        }
+
+        // A MANAGER can manage HR data only for their primary department
+        if (!hasRole(authentication, MANAGER_AUTHORITY)) {
+            return false;
+        }
+
+        UUID userId = extractUserId(authentication);
+        if (userId == null) {
+            return false;
+        }
+
+        return userRepository.findById(userId)
+                .map(user -> user.getPrimaryDepartment() != null
+                        && user.getPrimaryDepartment().getId().equals(departmentId))
+                .orElse(false);
     }
 
     // ============================================================================
@@ -124,6 +167,14 @@ public class WorkspaceAuthorization {
                 && authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(SUPER_ADMIN_AUTHORITY::equals);
+    }
+
+    private boolean hasRole(Authentication authentication, String role) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(role::equals);
     }
 
 public boolean canAccessDepartment(UUID workspaceId, UUID departmentId, Authentication authentication) {

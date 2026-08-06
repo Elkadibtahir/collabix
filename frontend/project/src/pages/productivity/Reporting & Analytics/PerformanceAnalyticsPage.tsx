@@ -3,12 +3,9 @@ import {
   ArrowLeft,
   TrendingUp,
   Trophy,
-  ChevronDown,
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
-import { Dropdown } from '../../../components/ui/Dropdown';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { performanceMetrics } from './analytics-data';
 

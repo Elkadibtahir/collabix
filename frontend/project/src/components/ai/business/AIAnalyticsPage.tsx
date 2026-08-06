@@ -37,8 +37,8 @@ export function AIAnalyticsPage({
       });
       setResultData(result);
       setHasResult(true);
-    } catch (err: any) {
-      setError(err?.message ?? 'AI generation failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'AI generation failed');
     }
   }
 

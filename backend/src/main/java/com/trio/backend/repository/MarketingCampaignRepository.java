@@ -16,7 +16,7 @@ public interface MarketingCampaignRepository extends JpaRepository<MarketingCamp
 
     Optional<MarketingCampaign> findByIdAndDepartment_Id(UUID id, UUID departmentId);
 
-    boolean existsByProject_IdAndName(UUID projectId, String name);
+    boolean existsByProject_IdAndNameIgnoreCase(UUID projectId, String name);
 
     long countByDepartment_Id(UUID departmentId);
 

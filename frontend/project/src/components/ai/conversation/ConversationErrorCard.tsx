@@ -2,7 +2,7 @@ import { AlertCircle, WifiOff, Clock, AlertTriangle, CloudOff, RefreshCw, X, Hom
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../../lib/cn';
 import { Button } from '../../ui/Button';
-import { type ConversationError, ErrorConfig, type ErrorType } from './ConversationTypes';
+import { ErrorConfig, type ErrorType } from './ConversationTypes';
 
 interface ConversationErrorCardProps {
   type: ErrorType;

@@ -4,12 +4,9 @@ import {
   Sun,
   Moon,
   Palette,
-  Eye,
   LayoutDashboard,
   Check,
   Save,
-  Type,
-  Sidebar as SidebarIcon,
   Accessibility,
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../components/ui/Card';

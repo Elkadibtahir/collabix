@@ -5,17 +5,14 @@ import {
   Monitor,
   Smartphone,
   Globe,
-  Clock,
   MoreHorizontal,
   LogOut,
   Check,
   Eye,
   EyeOff,
-  AlertTriangle,
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
 import { Badge } from '../../components/ui/Badge';
 import { IconButton } from '../../components/ui/IconButton';
 import { Dropdown, type DropdownItem } from '../../components/ui/Dropdown';

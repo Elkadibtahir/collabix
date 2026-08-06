@@ -4,6 +4,7 @@ import com.trio.backend.entity.base.AuditableEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
 
@@ -12,15 +13,15 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * HandoverEntry represents a handover form filled by a single user at the end of their shift.
+ * HandoverEntry represents a handover handed over by a sender to a receiver.
  *
  * <p>Architecture notes:</p>
  * <ul>
  *     <li>HandoverEntry belongs to exactly one Workspace and exactly one Department and exactly one Project.</li>
- *     <li>HandoverEntry belongs to exactly one User (the author of the form).</li>
  *     <li>Task is optional and can be associated for task-level handover context.</li>
- *     <li>Soft-delete is handled via status.</li>
- *     <li>Prepared for future enhancements: AI summary, PDF export, analytics, history, search, manager validation.</li>
+ *     <li>The author is the {@code sender}; the {@code receiver} is the person the handover is handed to.</li>
+ *     <li>Lifecycle: DRAFT -&gt; PENDING (sent) -&gt; ACCEPTED | REJECTED -&gt; COMPLETED; ARCHIVED for soft archiving.</li>
+ *     <li>Soft-delete is handled via the {@code deleted} flag.</li>
  * </ul>
  */
 @Entity
@@ -30,19 +31,15 @@ import java.util.UUID;
                 @Index(name = "idx_handover_entries_workspace_id", columnList = "workspace_id"),
                 @Index(name = "idx_handover_entries_department_id", columnList = "department_id"),
                 @Index(name = "idx_handover_entries_project_id", columnList = "project_id"),
-                @Index(name = "idx_handover_entries_user_id", columnList = "user_id"),
+                @Index(name = "idx_handover_entries_sender_id", columnList = "sender_id"),
+                @Index(name = "idx_handover_entries_receiver_id", columnList = "receiver_id"),
                 @Index(name = "idx_handover_entries_task_id", columnList = "task_id"),
                 @Index(name = "idx_handover_entries_status", columnList = "status"),
-                @Index(name = "idx_handover_entries_shift", columnList = "shift"),
-                @Index(name = "idx_handover_entries_passed_at", columnList = "passed_at"),
-                @Index(name = "idx_handover_entries_created_at", columnList = "created_at"),
-                @Index(name = "idx_handover_entries_manager_validation_status", columnList = "manager_validation_status")
-        },
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_handover_entries_user_project_passed_at",
-                        columnNames = {"user_id", "project_id", "passed_at"}
-                )
+                @Index(name = "idx_handover_entries_priority", columnList = "priority"),
+                @Index(name = "idx_handover_entries_due_date", columnList = "due_date"),
+                @Index(name = "idx_handover_entries_sent_at", columnList = "sent_at"),
+                @Index(name = "idx_handover_entries_deleted", columnList = "deleted"),
+                @Index(name = "idx_handover_entries_created_at", columnList = "created_at")
         }
 )
 @Getter
@@ -54,8 +51,7 @@ import java.util.UUID;
 public class HandoverEntry extends AuditableEntity {
 
     /**
-     * Workspace owning this handover.
-     * Required.
+     * Workspace owning this handover. Required.
      */
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -63,8 +59,7 @@ public class HandoverEntry extends AuditableEntity {
     private Workspace workspace;
 
     /**
-     * Department owning this handover.
-     * Required.
+     * Department owning this handover. Required.
      */
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -72,8 +67,7 @@ public class HandoverEntry extends AuditableEntity {
     private Department department;
 
     /**
-     * Project context for this handover.
-     * Required.
+     * Project context for this handover. Required.
      */
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -88,173 +82,115 @@ public class HandoverEntry extends AuditableEntity {
     private Task task;
 
     /**
-     * Author (user who filled the handover form).
-     * Required.
+     * Sender (author of the handover). Required.
      */
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false, updatable = false)
-    private User user;
-
-    // =========================================================================
-    // Form fields (required business data)
-    // =========================================================================
-
-    @NotBlank(message = "Work finished is required")
-    @Column(name = "work_finished", nullable = false, columnDefinition = "TEXT")
-    private String workFinished;
-
-    @NotBlank(message = "Work remaining is required")
-    @Column(name = "work_remaining", nullable = false, columnDefinition = "TEXT")
-    private String workRemaining;
-
-    @NotBlank(message = "Difficulties are required")
-    @Column(name = "difficulties", nullable = false, columnDefinition = "TEXT")
-    private String difficulties;
-
-    @NotBlank(message = "Blockers are required")
-    @Column(name = "blockers", nullable = false, columnDefinition = "TEXT")
-    private String blockers;
-
-    @NotBlank(message = "Important information is required")
-    @Column(name = "important_information", nullable = false, columnDefinition = "TEXT")
-    private String importantInformation;
-
-    @NotBlank(message = "Priorities are required")
-    @Column(name = "priorities", nullable = false, columnDefinition = "TEXT")
-    private String priorities;
-
-    @NotNull(message = "Time spent is required")
-    @Column(name = "time_spent_minutes", nullable = false)
-    private Long timeSpentMinutes;
-
-    @NotNull(message = "Need help is required")
-    @Column(name = "need_help", nullable = false)
-    private Boolean needHelp;
-
-    @Column(name = "additional_notes", columnDefinition = "TEXT")
-    private String additionalNotes;
-
-    // =========================================================================
-    // Shift metadata
-    // =========================================================================
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "shift", nullable = false, length = 20)
-    private Shift shift;
+    @JoinColumn(name = "sender_id", nullable = false, updatable = false)
+    private User sender;
 
     /**
-     * Date/time of handover.
+     * Receiver (person the handover is handed to). Required.
      */
     @NotNull
-    @Column(name = "passed_at", nullable = false)
-    private LocalDateTime passedAt;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private User receiver;
 
     // =========================================================================
-    // Future-proofing: AI, PDF export, analytics, history, validation
+    // Workflow fields
     // =========================================================================
 
-    @Column(name = "ai_summary", columnDefinition = "TEXT")
-    private String aiSummary;
+    @NotBlank(message = "Title is required")
+    @Size(max = 255, message = "Title must not exceed 255 characters")
+    @Column(name = "title", nullable = false, length = 255)
+    private String title;
 
-    @Column(name = "ai_processed", nullable = false)
-    private Boolean aiProcessed = false;
+    @NotBlank(message = "Content is required")
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
+    private String content;
 
-    @Column(name = "pdf_export_available", nullable = false)
-    private Boolean pdfExportAvailable = false;
-
-    @Column(name = "rag_embeddings_available", nullable = false)
-    private Boolean ragEmbeddingsAvailable = false;
-
-    @Column(name = "search_index_version")
-    private Integer searchIndexVersion;
-
-    @Column(name = "view_count", nullable = false)
-    private Long viewCount = 0L;
-
-    @Column(name = "favorite_count", nullable = false)
-    private Long favoriteCount = 0L;
-
+    @NotNull(message = "Priority is required")
     @Enumerated(EnumType.STRING)
-    @Column(name = "manager_validation_status", nullable = false, length = 30)
-    private ManagerValidationStatus managerValidationStatus = ManagerValidationStatus.PENDING;
-
-    @Column(name = "manager_validated_at")
-    private LocalDateTime managerValidatedAt;
-
-    @Column(name = "manager_validated_by")
-    private UUID managerValidatedBy;
-
-    // =========================================================================
-    // Soft delete
-    // =========================================================================
+    @Column(name = "priority", nullable = false, length = 20)
+    private Priority priority = Priority.MEDIUM;
 
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
-    private HandoverEntryStatus status = HandoverEntryStatus.ACTIVE;
+    private HandoverStatus status = HandoverStatus.DRAFT;
+
+    @Column(name = "due_date")
+    private LocalDateTime dueDate;
+
+    // =========================================================================
+    // Lifecycle timestamps
+    // =========================================================================
+
+    @Column(name = "sent_at")
+    private LocalDateTime sentAt;
+
+    @Column(name = "accepted_at")
+    private LocalDateTime acceptedAt;
+
+    @Column(name = "rejected_at")
+    private LocalDateTime rejectedAt;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
+    @Column(name = "archived_at")
+    private LocalDateTime archivedAt;
+
+    /**
+     * Soft delete flag.
+     */
+    @NotNull
+    @Column(name = "deleted", nullable = false)
+    private Boolean deleted = false;
 
     @PrePersist
     @PreUpdate
     private void validateHierarchy() {
+        if (priority == null) {
+            priority = Priority.MEDIUM;
+        }
         if (status == null) {
-            status = HandoverEntryStatus.ACTIVE;
+            status = HandoverStatus.DRAFT;
         }
-        if (timeSpentMinutes == null) {
-            timeSpentMinutes = 0L;
-        }
-        if (needHelp == null) {
-            needHelp = false;
-        }
-        if (aiProcessed == null) {
-            aiProcessed = false;
-        }
-        if (pdfExportAvailable == null) {
-            pdfExportAvailable = false;
-        }
-        if (ragEmbeddingsAvailable == null) {
-            ragEmbeddingsAvailable = false;
-        }
-        if (viewCount == null) {
-            viewCount = 0L;
-        }
-        if (favoriteCount == null) {
-            favoriteCount = 0L;
-        }
-        if (managerValidationStatus == null) {
-            managerValidationStatus = ManagerValidationStatus.PENDING;
-        }
-        if (searchIndexVersion == null) {
-            searchIndexVersion = 0;
+        if (deleted == null) {
+            deleted = false;
         }
 
         Objects.requireNonNull(workspace, "workspace must not be null");
         Objects.requireNonNull(department, "department must not be null");
         Objects.requireNonNull(project, "project must not be null");
+        Objects.requireNonNull(sender, "sender must not be null");
+        Objects.requireNonNull(receiver, "receiver must not be null");
         if (!Objects.equals(department.getId(), project.getDepartment().getId())) {
             throw new IllegalStateException("HandoverEntry.department must match project.department");
         }
         if (!Objects.equals(workspace.getId(), project.getDepartment().getWorkspace().getId())) {
             throw new IllegalStateException("HandoverEntry.workspace must match project.department.workspace");
         }
+        if (Objects.equals(sender.getId(), receiver.getId())) {
+            throw new IllegalStateException("HandoverEntry.sender and receiver must be different users");
+        }
     }
 
-    public enum HandoverEntryStatus {
-        ACTIVE,
-        ARCHIVED,
-        DELETED
+    public enum Priority {
+        LOW,
+        MEDIUM,
+        HIGH,
+        URGENT
     }
 
-    public enum Shift {
-        MORNING,
-        EVENING
-    }
-
-    public enum ManagerValidationStatus {
+    public enum HandoverStatus {
+        DRAFT,
         PENDING,
-        APPROVED,
-        REJECTED
+        ACCEPTED,
+        REJECTED,
+        COMPLETED,
+        ARCHIVED
     }
 }
-

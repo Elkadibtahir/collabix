@@ -225,7 +225,18 @@ VALUES
     ('ANALYTICS_EXPORT', 'Export Analytics', 'Allows exporting analytics', NOW(), 0),
 
     -- Admin
-    ('ADMIN_USER_UNLOCK', 'Unlock User Account', 'Allows unlocking user accounts', NOW(), 0);
+    ('ADMIN_USER_UNLOCK', 'Unlock User Account', 'Allows unlocking user accounts', NOW(), 0),
+
+    -- User management: Read/Update/Delete (used by UserController)
+    ('USER_READ',  'Read User',   'Allows viewing user accounts', NOW(), 0),
+    ('USER_UPDATE', 'Update User', 'Allows updating user accounts', NOW(), 0),
+    ('USER_DELETE', 'Delete User', 'Allows deleting user accounts', NOW(), 0),
+
+    -- Role: Read (used by RoleController)
+    ('ROLE_READ', 'Read Role', 'Allows viewing roles', NOW(), 0),
+
+    -- Permission: Read (used by PermissionController)
+    ('PERMISSION_READ', 'Read Permission', 'Allows viewing permissions', NOW(), 0);
 
 -- =========================================
 -- PART 2: ASSIGN PERMISSIONS TO ROLES
@@ -238,9 +249,9 @@ FROM roles r CROSS JOIN permissions p
 WHERE r.name = 'ADMIN'
   AND p.code IN (
     'USER_ACTIVATE', 'USER_DEACTIVATE', 'USER_SUSPEND', 'USER_REACTIVATE',
-    'USER_ARCHIVE', 'USER_RESTORE',
-    'ROLE_CREATE', 'ROLE_DELETE',
-    'PERMISSION_CREATE', 'PERMISSION_UPDATE', 'PERMISSION_DELETE',
+    'USER_ARCHIVE', 'USER_RESTORE', 'USER_READ', 'USER_UPDATE', 'USER_DELETE',
+    'ROLE_CREATE', 'ROLE_READ', 'ROLE_DELETE',
+    'PERMISSION_CREATE', 'PERMISSION_READ', 'PERMISSION_UPDATE', 'PERMISSION_DELETE',
     'WORKSPACE_CREATE', 'WORKSPACE_READ', 'WORKSPACE_UPDATE', 'WORKSPACE_DELETE',
     'DEPARTMENT_CREATE', 'DEPARTMENT_READ', 'DEPARTMENT_UPDATE', 'DEPARTMENT_DELETE',
     'TEAM_CREATE', 'TEAM_READ', 'TEAM_UPDATE', 'TEAM_DELETE',

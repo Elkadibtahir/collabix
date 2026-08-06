@@ -14,16 +14,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-
 /**
- * Repository for HandoverJournal entity.
+ * Repository for the HandoverJournal entity.
  *
  * <p>Conventions:</p>
  * <ul>
  *     <li>All queries filter by ACTIVE status by default.</li>
- *     <li>Workspace scope is validated through the entity chain: HandoverJournal -> Project/Department -> Workspace.</li>
- *     <li>Pagination is applied for list operations to ensure performance.</li>
- *     <li>Methods are designed to support future statistics, analytics, and AI search features.</li>
+ *     <li>Workspace scope is validated through the entity chain.</li>
+ *     <li>Pagination is applied for list operations.</li>
  * </ul>
  */
 @Repository
@@ -102,35 +100,6 @@ public interface HandoverJournalRepository extends JpaRepository<HandoverJournal
             """)
     long countByProjectId(@Param("projectId") UUID projectId);
 
-    // ==================== FIND BY SHIFT ====================
-
-    @Query("""
-            SELECT hj FROM HandoverJournal hj
-            WHERE hj.workspace.id = :workspaceId
-              AND hj.shift = :shift
-              AND hj.status = 'ACTIVE'
-            ORDER BY hj.journalDate DESC
-            """)
-    Page<HandoverJournal> findByWorkspaceAndShiftPaginated(
-            @Param("workspaceId") UUID workspaceId,
-            @Param("shift") HandoverJournal.Shift shift,
-            Pageable pageable
-    );
-
-
-
-
-    @Query("""
-            SELECT COUNT(hj) FROM HandoverJournal hj
-            WHERE hj.workspace.id = :workspaceId
-              AND hj.shift = :shift
-              AND hj.status = 'ACTIVE'
-            """)
-    long countByWorkspaceAndShift(
-            @Param("workspaceId") UUID workspaceId,
-            @Param("shift") HandoverJournal.Shift shift
-    );
-
     // ==================== FIND BY DATE (RANGE) ====================
 
     @Query("""
@@ -161,7 +130,7 @@ public interface HandoverJournalRepository extends JpaRepository<HandoverJournal
             @Param("to") LocalDateTime to
     );
 
-    // ==================== FUTURE STATISTICS / ANALYTICS ====================
+    // ==================== STATISTICS / ANALYTICS ====================
 
     @Query("""
             SELECT COUNT(hj) FROM HandoverJournal hj
@@ -187,20 +156,18 @@ public interface HandoverJournalRepository extends JpaRepository<HandoverJournal
             Pageable pageable
     );
 
-    // ==================== EXISTS BY PROJECT + SHIFT + DATE RANGE ====================
+    // ==================== EXISTS BY PROJECT + DATE RANGE ====================
 
     @Query("""
             SELECT CASE WHEN COUNT(hj) > 0 THEN TRUE ELSE FALSE END
             FROM HandoverJournal hj
             WHERE hj.project.id = :projectId
-              AND hj.shift = :shift
               AND hj.journalDate >= :from
               AND hj.journalDate <= :to
               AND hj.status = 'ACTIVE'
             """)
-    boolean existsByProjectIdAndShiftAndJournalDateBetween(
+    boolean existsByProjectIdAndJournalDateBetween(
             @Param("projectId") UUID projectId,
-            @Param("shift") HandoverJournal.Shift shift,
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to
     );
@@ -213,18 +180,10 @@ public interface HandoverJournalRepository extends JpaRepository<HandoverJournal
               AND hj.status = 'ACTIVE'
             ORDER BY hj.generationDate DESC
             """)
-    List<HandoverJournal> findByProjectIdAndLogDateBetween(
+    List<HandoverJournal> findByProjectIdAndJournalDateBetween(
             @Param("projectId") UUID projectId,
             @Param("date") LocalDate date
     );
-
-    default Optional<HandoverJournal> findByProjectIdAndShiftAndJournalDateBetween(
-            UUID projectId,
-            LocalDate date
-    ) {
-        List<HandoverJournal> journals = findByProjectIdAndLogDateBetween(projectId, date);
-        return journals.isEmpty() ? Optional.empty() : Optional.of(journals.get(0));
-    }
 
     // ==================== SOFT DELETE (status updates) ====================
 
@@ -250,4 +209,3 @@ public interface HandoverJournalRepository extends JpaRepository<HandoverJournal
             @Param("workspaceId") UUID workspaceId
     );
 }
-

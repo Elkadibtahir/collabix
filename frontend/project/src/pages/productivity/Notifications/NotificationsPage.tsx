@@ -5,7 +5,6 @@ import {
   Bell,
   Check,
   Trash2,
-  Archive,
   MoreHorizontal,
   ChevronDown,
   Loader2,
@@ -13,7 +12,6 @@ import {
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Badge } from '../../../components/ui/Badge';
-import { Avatar } from '../../../components/ui/Avatar';
 import { IconButton } from '../../../components/ui/IconButton';
 import { Dropdown, type DropdownItem } from '../../../components/ui/Dropdown';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -284,7 +282,7 @@ function NotificationItem({
   onMarkRead: () => void;
   onDelete: () => void;
 }) {
-  const priorityColor: Record<string, string> = {
+  const priorityColor: Record<string, 'success' | 'info' | 'warning' | 'danger'> = {
     LOW: 'success',
     NORMAL: 'info',
     HIGH: 'warning',

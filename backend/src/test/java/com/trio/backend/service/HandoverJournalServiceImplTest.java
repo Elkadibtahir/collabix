@@ -2,12 +2,12 @@ package com.trio.backend.service;
 
 import com.trio.backend.dto.organisation.handover.HandoverJournalResponse;
 import com.trio.backend.entity.*;
-import com.trio.backend.entity.ids.WorkspaceMemberId;
+import com.trio.backend.entity.HandoverEntry.HandoverStatus;
+import com.trio.backend.entity.HandoverEntry.Priority;
 import com.trio.backend.enums.*;
 import com.trio.backend.exception.ResourceNotFoundException;
 import com.trio.backend.mapper.HandoverJournalMapper;
 import com.trio.backend.repository.*;
-import com.trio.backend.security.user.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,8 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
@@ -52,11 +50,9 @@ class HandoverJournalServiceImplTest {
     @Mock
     private DocumentRepository documentRepository;
     @Mock
-    private WorkspaceMemberRepository workspaceMemberRepository;
-    @Mock
-    private WorkspaceRepository workspaceRepository;
-    @Mock
     private HandoverJournalMapper handoverJournalMapper;
+    @Mock
+    private HandoverSupport support;
 
     @InjectMocks
     private HandoverJournalServiceImpl handoverJournalService;
@@ -65,7 +61,6 @@ class HandoverJournalServiceImplTest {
     private Workspace workspace;
     private Department department;
     private Project project;
-    private WorkspaceMember workspaceMember;
     private HandoverJournal exampleJournal;
     private HandoverJournalResponse exampleResponse;
     private UUID wsId;
@@ -76,7 +71,6 @@ class HandoverJournalServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        SecurityContextHolder.clearContext();
         userId = UUID.randomUUID();
         wsId = UUID.randomUUID();
         deptId = UUID.randomUUID();
@@ -114,20 +108,10 @@ class HandoverJournalServiceImplTest {
                 .build();
         ReflectionTestUtils.setField(project, "id", projId);
 
-        workspaceMember = WorkspaceMember.builder()
-                .workspaceMemberId(new WorkspaceMemberId(wsId, userId))
-                .workspace(workspace)
-                .user(actor)
-                .role(WorkspaceRole.ADMIN)
-                .status(WorkspaceMemberStatus.ACTIVE)
-                .joinedAt(Instant.now())
-                .build();
-
         exampleJournal = HandoverJournal.builder()
                 .workspace(workspace)
                 .department(department)
                 .project(project)
-                .shift(HandoverJournal.Shift.MORNING)
                 .journalDate(LocalDate.now().atStartOfDay())
                 .generatedSummary("Test summary")
                 .mainDoneWork("Done")
@@ -135,6 +119,12 @@ class HandoverJournalServiceImplTest {
                 .blockers("None")
                 .difficulties("None")
                 .recommendations("None")
+                .totalHandovers(0L)
+                .pendingHandovers(0L)
+                .completedHandovers(0L)
+                .rejectedHandovers(0L)
+                .urgentHandovers(0L)
+                .overdueHandovers(0L)
                 .generationStatus(HandoverJournal.GenerationStatus.GENERATED)
                 .generationDate(LocalDateTime.now())
                 .generationProcessedBy(userId)
@@ -144,14 +134,9 @@ class HandoverJournalServiceImplTest {
 
         exampleResponse = new HandoverJournalResponse();
 
-        lenient().when(workspaceMemberRepository
-                        .findByWorkspaceMemberId_WorkspaceIdAndWorkspaceMemberId_UserId(wsId, userId))
-                .thenReturn(Optional.of(workspaceMember));
-        lenient().when(workspaceMemberRepository.existsWithRole(wsId, userId, WorkspaceRole.ADMIN)).thenReturn(true);
-
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(new CustomUserDetails(actor), null, List.of())
-        );
+        lenient().when(support.currentUserId()).thenReturn(userId);
+        lenient().when(support.isWorkspaceAdminOrOwner(wsId, userId)).thenReturn(true);
+        lenient().when(support.userDisplayName(any())).thenReturn("Admin User");
     }
 
     @Test
@@ -163,7 +148,7 @@ class HandoverJournalServiceImplTest {
         Instant endInstant = dayEnd.atZone(ZoneId.systemDefault()).toInstant();
 
         when(projectRepository.findByIdAndDepartment_Id(projId, deptId)).thenReturn(Optional.of(project));
-        when(handoverEntryRepository.findByProjectIdAndPassedAtBetween(projId, dayStart, dayEnd))
+        when(handoverEntryRepository.findByProjectIdAndCreatedAtBetween(projId, startInstant, endInstant))
                 .thenReturn(List.of());
         when(handoverJournalRepository.save(any(HandoverJournal.class))).thenReturn(exampleJournal);
         when(handoverJournalMapper.toResponse(exampleJournal)).thenReturn(exampleResponse);
@@ -172,12 +157,13 @@ class HandoverJournalServiceImplTest {
 
         assertNotNull(result);
         verify(handoverJournalRepository).save(any(HandoverJournal.class));
+        verify(taskRepository).countActiveByProjectId(projId);
         verify(taskRepository).countByProjectIdAndStatusAndUpdatedAtBetween(
                 projId, TaskStatus.COMPLETED, startInstant, endInstant);
         verify(commentRepository).countByProjectIdAndStatusAndCreatedAtBetween(
                 projId, CommentStatus.ACTIVE, startInstant, endInstant);
         verify(activityRepository).countByProjectIdAndStatusAndCreatedAtBetween(
-                projId, TaskStatus.ACTIVE, startInstant, endInstant);
+                projId, ActivityStatus.ACTIVE, startInstant, endInstant);
         verify(documentRepository).countByProjectIdAndCreatedAtBetween(
                 projId, startInstant, endInstant);
     }
@@ -247,7 +233,9 @@ class HandoverJournalServiceImplTest {
         LocalDateTime dayEnd = journalDate.atTime(LocalTime.MAX);
 
         when(handoverJournalRepository.findByIdAndWorkspace(journalId, wsId)).thenReturn(Optional.of(exampleJournal));
-        when(handoverEntryRepository.findByProjectIdAndPassedAtBetween(projId, dayStart, dayEnd))
+        when(projectRepository.findByIdAndDepartment_Id(projId, deptId)).thenReturn(Optional.of(project));
+        when(handoverEntryRepository.findByProjectIdAndCreatedAtBetween(projId,
+                dayStart.atZone(ZoneId.systemDefault()).toInstant(), dayEnd.atZone(ZoneId.systemDefault()).toInstant()))
                 .thenReturn(List.of());
         when(handoverJournalRepository.save(any(HandoverJournal.class))).thenReturn(exampleJournal);
         when(handoverJournalMapper.toResponse(exampleJournal)).thenReturn(exampleResponse);
@@ -293,7 +281,8 @@ class HandoverJournalServiceImplTest {
         LocalDateTime dayEnd = today.atTime(LocalTime.MAX);
 
         when(projectRepository.findByIdAndDepartment_Id(projId, deptId)).thenReturn(Optional.of(project));
-        when(handoverEntryRepository.findByProjectIdAndPassedAtBetween(projId, dayStart, dayEnd))
+        when(handoverEntryRepository.findByProjectIdAndCreatedAtBetween(projId,
+                dayStart.atZone(ZoneId.systemDefault()).toInstant(), dayEnd.atZone(ZoneId.systemDefault()).toInstant()))
                 .thenReturn(List.of());
         when(handoverJournalRepository.save(any(HandoverJournal.class))).thenReturn(exampleJournal);
 
@@ -316,19 +305,18 @@ class HandoverJournalServiceImplTest {
                 .workspace(workspace)
                 .department(department)
                 .project(project)
-                .user(otherUser)
-                .workFinished("Fixed bug")
-                .workRemaining("Test")
-                .blockers("None")
-                .difficulties("None")
-                .importantInformation("Deployed")
-                .shift(HandoverEntry.Shift.EVENING)
-                .passedAt(LocalDateTime.now())
+                .sender(otherUser)
+                .receiver(actor)
+                .title("Bug fix")
+                .content("Fixed bug")
+                .priority(Priority.HIGH)
+                .status(HandoverStatus.COMPLETED)
                 .build();
         ReflectionTestUtils.setField(entry, "id", UUID.randomUUID());
 
         when(projectRepository.findByIdAndDepartment_Id(projId, deptId)).thenReturn(Optional.of(project));
-        when(handoverEntryRepository.findByProjectIdAndPassedAtBetween(projId, dayStart, dayEnd))
+        when(handoverEntryRepository.findByProjectIdAndCreatedAtBetween(projId,
+                dayStart.atZone(ZoneId.systemDefault()).toInstant(), dayEnd.atZone(ZoneId.systemDefault()).toInstant()))
                 .thenReturn(List.of(entry));
         when(handoverJournalRepository.save(any(HandoverJournal.class))).thenAnswer(invocation -> {
             HandoverJournal saved = invocation.getArgument(0);
@@ -339,10 +327,11 @@ class HandoverJournalServiceImplTest {
         HandoverJournal result = handoverJournalService.generateJournalInternal(wsId, deptId, projId, userId);
 
         assertNotNull(result);
-        assertNotNull(result.getGeneratedSummary());
-        assertTrue(result.getGeneratedSummary().contains("Contexte du projet"));
-        assertTrue(result.getGeneratedSummary().contains("Collecte de 1 formulaires"));
+        assertEquals(1L, result.getTotalHandovers());
+        assertTrue(result.getGeneratedSummary().contains("[V1 Synthesizer] Collected 1 handover(s) for the day."));
+        assertTrue(result.getGeneratedSummary().contains("--- Project context ---"));
         assertTrue(result.getMainDoneWork().contains("Fixed bug"));
-        verify(handoverEntryRepository).findByProjectIdAndPassedAtBetween(projId, dayStart, dayEnd);
+        verify(handoverEntryRepository).findByProjectIdAndCreatedAtBetween(projId,
+                dayStart.atZone(ZoneId.systemDefault()).toInstant(), dayEnd.atZone(ZoneId.systemDefault()).toInstant());
     }
 }

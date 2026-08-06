@@ -40,7 +40,7 @@ public class InterviewController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_CREATE')")
     public ApiResponse<InterviewResponse> schedule(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -73,7 +73,7 @@ public class InterviewController {
     }
 
     @PutMapping("/{interviewId}")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_UPDATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_UPDATE')")
     public ApiResponse<InterviewResponse> update(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -85,7 +85,7 @@ public class InterviewController {
     }
 
     @PostMapping("/{interviewId}/cancel")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_CANCEL')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_CANCEL')")
     public ApiResponse<InterviewResponse> cancel(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -95,9 +95,20 @@ public class InterviewController {
         return ApiResponse.success("Interview cancelled successfully.");
     }
 
+    @PostMapping("/{interviewId}/complete")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_UPDATE')")
+    public ApiResponse<InterviewResponse> complete(
+            @PathVariable UUID workspaceId,
+            @PathVariable UUID departmentId,
+            @PathVariable UUID candidateId,
+            @PathVariable UUID interviewId) {
+        return ApiResponse.success("Interview completed successfully.",
+                interviewService.complete(workspaceId, departmentId, candidateId, interviewId));
+    }
+
     @DeleteMapping("/{interviewId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_DELETE')")
     public void delete(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -107,7 +118,7 @@ public class InterviewController {
     }
 
     @PostMapping("/{interviewId}/participants")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_CREATE')")
     public ApiResponse<InterviewParticipantResponse> addParticipant(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -120,7 +131,7 @@ public class InterviewController {
 
     @DeleteMapping("/{interviewId}/participants/{participantId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_DELETE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_DELETE')")
     public void removeParticipant(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,
@@ -142,7 +153,7 @@ public class InterviewController {
     }
 
     @PostMapping("/{interviewId}/feedback")
-    @PreAuthorize("@workspaceAuth.canUpdateWorkspace(#workspaceId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_CREATE')")
+    @PreAuthorize("@workspaceAuth.canManageDepartmentHR(#workspaceId, #departmentId, authentication) && @permissionEvaluator.hasPermission(authentication, 'INTERVIEW_CREATE')")
     public ApiResponse<InterviewFeedbackResponse> submitFeedback(
             @PathVariable UUID workspaceId,
             @PathVariable UUID departmentId,

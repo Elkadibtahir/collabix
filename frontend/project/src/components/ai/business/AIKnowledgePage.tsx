@@ -38,8 +38,8 @@ export function AIKnowledgePage({
       });
       setResultData(result);
       setHasResult(true);
-    } catch (err: any) {
-      setError(err?.message ?? 'Knowledge search failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Knowledge search failed');
     }
   }
 

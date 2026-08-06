@@ -56,15 +56,17 @@ export interface WorkspaceDashboardResponse {
 }
 
 export interface PersonalDashboardResponse {
-  myTasks: { taskId: string; title: string; status: string; priority: string; dueAt: string; projectName: string }[];
+  myTasks: { id: string; title: string; projectId: string; projectName: string; status: string; dueAt: string }[];
   overdueTasks: number;
   unreadNotifications: number;
-  unreadMentions: { id: string; commentId: string; mentionedBy: string; content: string; createdAt: string }[];
-  recentComments: { id: string; taskId: string; content: string; authorName: string; createdAt: string; taskTitle: string }[];
-  todaysHandovers: { id: string; title: string; status: string; createdAt: string }[];
-  recentActivities: { id: string; description: string; actorName: string; projectName: string; createdAt: string }[];
-  recentWorkspaceProjects: { id: string; name: string; status: string; progress: number }[];
-  workspaceActivities: { id: string; description: string; actorName: string; projectName: string; createdAt: string }[];
+  unreadMentions: { id: string; actorName: string; context: string; createdAt: string }[];
+  recentComments: { id: string; taskId: string; content: string; status: string; createdAt: string; updatedAt: string }[];
+  todaysHandovers: { id: string; projectName: string; senderName: string; receiverName: string; title: string; status: string; priority: string; dueDate: string; createdAt: string }[];
+  recentActivities: { id: string; description: string; projectName: string; createdAt: string }[];
+  recentWorkspaceProjects: { id: string; name: string; departmentName: string }[];
+  recentDocuments: { id: string; title: string; fileName: string; mimeType: string; projectName: string; createdAt: string }[];
+  knowledgeArticles: { id: string; title: string; category: string; createdAt: string }[];
+  workspaceActivities: { type: string; description: string; actorName: string; timestamp: string }[];
 }
 
 export const workspaceService = {

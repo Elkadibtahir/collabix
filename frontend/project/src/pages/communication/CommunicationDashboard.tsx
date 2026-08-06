@@ -1,5 +1,5 @@
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { MessageSquare, Hash, Users as UsersIcon, Bell, FileText, ArrowRight } from 'lucide-react';
+import { MessageSquare, Hash, Users as UsersIcon, Bell, ArrowRight } from 'lucide-react';
 import { Card, CardBody } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useWorkspaceDefaults } from '../../services/conversation-hooks';

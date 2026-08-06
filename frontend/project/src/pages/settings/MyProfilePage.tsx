@@ -6,7 +6,6 @@ import {
   CalendarDays,
   Edit,
   Save,
-  Check,
 } from 'lucide-react';
 import { Card, CardBody, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
