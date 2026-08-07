@@ -57,7 +57,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               'cx-input transition-colors',
               leftIcon && 'pl-9',
               rightIcon && 'pr-9',
-              showError && 'border-danger-500 focus:border-danger-500 focus:shadow-[0_0_0_3px_rgb(var(--danger-100))]',
+              showError && 'border-danger-500 bg-danger-50/30 focus:border-danger-500 focus:shadow-[0_0_0_3px_rgb(var(--danger-100))] dark:bg-danger-500/5',
               showSuccess && 'border-success-500 focus:border-success-500 focus:shadow-[0_0_0_3px_rgb(var(--success-100))]',
               className,
             )}

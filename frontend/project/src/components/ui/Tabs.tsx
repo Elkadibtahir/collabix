@@ -44,11 +44,11 @@ export function Tabs({
             aria-selected={isActive}
             onClick={() => changeHandler(item.id)}
             className={cn(
-              'relative inline-flex items-center gap-2 font-medium transition-colors duration-150 ease-cx',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas rounded-t-md',
-              size === 'sm' ? 'px-2.5 py-2 text-caption' : 'px-3 py-2.5 text-body',
+              'relative inline-flex items-center gap-2 font-medium transition-all duration-150 ease-cx',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas rounded-lg',
+              size === 'sm' ? 'px-2.5 py-1.5 text-caption rounded-md' : 'px-3 py-2 text-body',
               isActive
-                ? 'text-accent-600 dark:text-accent-400'
+                ? 'text-accent-600 dark:text-accent-300 bg-accent-50/80 dark:bg-accent-200/10'
                 : 'text-text-tertiary hover:text-text-secondary',
             )}
           >
@@ -59,7 +59,7 @@ export function Tabs({
                 className={cn(
                   'inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-2xs font-semibold',
                   isActive
-                    ? 'bg-accent-100 text-accent-700 dark:bg-accent-100 dark:text-accent-200'
+                    ? 'bg-accent-100 text-accent-700 dark:bg-accent-200/30 dark:text-accent-300'
                     : 'bg-surface-2 text-text-tertiary',
                 )}
               >
@@ -67,7 +67,7 @@ export function Tabs({
               </span>
             )}
             {isActive && (
-              <span className="absolute -bottom-px left-0 right-0 h-0.5 rounded-full bg-accent-500" />
+              <span className="absolute -bottom-px left-1.5 right-1.5 h-0.5 rounded-full bg-gradient-to-r from-transparent via-accent-500 to-transparent" />
             )}
           </button>
         );

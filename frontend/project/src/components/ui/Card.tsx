@@ -1,11 +1,12 @@
 import { type HTMLAttributes, type ReactNode } from 'react';
 import { cn } from '../../lib/cn';
 
-type CardVariant = 'default' | 'inner';
+type CardVariant = 'default' | 'inner' | 'hover';
 
 const cardVariants: Record<CardVariant, string> = {
   default: 'cx-card',
   inner: 'cx-card border border-border-subtle bg-surface',
+  hover: 'cx-card cx-card-hover',
 };
 
 export function Card({ className, variant = 'default', ...props }: HTMLAttributes<HTMLDivElement> & { variant?: CardVariant }) {
@@ -22,7 +23,7 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
 }
 
 export function CardTitle({ className, children }: { className?: string; children: ReactNode }) {
-  return <h3 className={cn('text-section font-semibold text-text-primary', className)}>{children}</h3>;
+  return <h3 className={cn('text-section font-bold text-text-primary tracking-tight', className)}>{children}</h3>;
 }
 
 export function CardDescription({ className, children }: { className?: string; children: ReactNode }) {
@@ -46,8 +47,8 @@ export function SectionHeader({ title, description, action }: { title: string; d
   return (
     <div className="mb-4 flex items-start justify-between gap-4">
       <div>
-        <h2 className="text-section font-semibold text-text-primary">{title}</h2>
-        {description && <p className="mt-0.5 text-caption text-text-tertiary">{description}</p>}
+        <h2 className="text-section font-bold text-text-primary tracking-tight">{title}</h2>
+        {description && <p className="mt-1 text-caption text-text-tertiary">{description}</p>}
       </div>
       {action}
     </div>

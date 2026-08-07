@@ -12,18 +12,18 @@ export interface ProgressProps {
 }
 
 const toneClasses: Record<Tone, string> = {
-  accent: 'bg-accent-500',
-  success: 'bg-success-500',
-  warning: 'bg-warning-500',
-  danger: 'bg-danger-500',
-  neutral: 'bg-border-strong',
-  info: 'bg-info-500',
+  accent: 'bg-gradient-to-r from-accent-500 to-accent-400',
+  success: 'bg-gradient-to-r from-success-500 to-emerald-500',
+  warning: 'bg-gradient-to-r from-warning-500 to-amber-400',
+  danger: 'bg-gradient-to-r from-danger-500 to-rose-500',
+  neutral: 'bg-gradient-to-r from-border-strong to-border-default',
+  info: 'bg-gradient-to-r from-info-500 to-blue-500',
 };
 
 const sizeClasses = {
   xs: 'h-0.5',
   sm: 'h-1',
-  md: 'h-2',
+  md: 'h-1.5',
   lg: 'h-2.5',
 };
 

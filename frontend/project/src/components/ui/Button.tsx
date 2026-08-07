@@ -15,23 +15,23 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'bg-accent-600 text-white hover:bg-accent-700 active:bg-accent-800 shadow-cx-xs border border-transparent',
+    'bg-gradient-to-b from-accent-500 to-accent-700 text-white hover:from-accent-600 hover:to-accent-800 active:to-accent-800 shadow-[var(--shadow-glow-accent)] border border-accent-600/30 hover:shadow-cx-md',
   secondary:
-    'bg-surface-2 text-text-primary hover:bg-border-subtle active:bg-border-default border border-border-subtle',
+    'bg-surface-2 text-text-primary hover:bg-border-subtle active:bg-border-default border border-border-subtle hover:shadow-cx-sm',
   outline:
-    'bg-transparent text-text-primary border border-border-default hover:bg-surface hover:border-border-strong',
+    'bg-transparent text-text-primary border border-border-default hover:bg-white dark:hover:bg-surface-2 hover:border-border-strong hover:shadow-cx-sm',
   ghost:
     'bg-transparent text-text-secondary hover:bg-surface-2 hover:text-text-primary border border-transparent',
   danger:
-    'bg-danger-500 text-white hover:bg-danger-700 active:bg-danger-700 shadow-cx-xs border border-transparent',
+    'bg-gradient-to-b from-danger-500 to-danger-700 text-white hover:from-danger-600 hover:to-danger-700 active:to-danger-700 shadow-cx-xs border border-transparent',
   success:
-    'bg-success-500 text-white hover:bg-success-700 active:bg-success-700 shadow-cx-xs border border-transparent',
+    'bg-gradient-to-b from-success-500 to-emerald-700 text-white hover:from-emerald-500 hover:to-emerald-800 shadow-cx-xs border border-transparent',
 };
 
 const sizeClasses: Record<Size, string> = {
-  sm: 'h-8 px-3 text-caption gap-1.5',
-  md: 'h-10 px-4 text-body gap-2',
-  lg: 'h-11 px-5 text-body-lg gap-2',
+  sm: 'h-8 px-3 text-caption gap-1.5 rounded-lg',
+  md: 'h-10 px-4 text-body gap-2 rounded-[10px]',
+  lg: 'h-11 px-5 text-body-lg gap-2 rounded-xl',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -45,10 +45,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         aria-busy={loading || undefined}
         className={cn(
-          'inline-flex items-center justify-center rounded-lg font-medium transition-all duration-150 ease-cx',
+          'inline-flex items-center justify-center font-medium transition-all duration-150 ease-cx',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
           'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
-          'active:scale-[0.98]',
+          'active:scale-[0.98] hover:-translate-y-px',
           variantClasses[variant],
           sizeClasses[size],
           fullWidth && 'w-full',

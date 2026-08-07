@@ -54,7 +54,8 @@ export function DevelopmentDashboardTab({ wsId, deptId, onNavigate }: { wsId: st
     );
   }
 
-  const { overview, taskSummary, departmentMembers, activeProjects, recentProjects, departmentTasks, departmentActivities } = dashboard;
+  const { overview, taskSummary, departmentMembers, activeProjects, recentProjects, departmentActivities } = dashboard;
+  const departmentTasks = dashboard.departmentTasks ?? [];
   const completionRate = taskSummary.totalTasks > 0
     ? Math.round(((taskSummary.totalTasks - taskSummary.activeTasks) / taskSummary.totalTasks) * 100)
     : 0;

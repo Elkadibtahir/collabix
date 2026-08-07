@@ -159,7 +159,7 @@ export function Table<T>({
         </div>
       )}
 
-      <div className="overflow-auto rounded-lg border border-border-subtle" style={{ maxHeight }}>
+      <div className="overflow-hidden rounded-xl border border-border-subtle shadow-cx-xs" style={{ maxHeight }}>
         <table className="w-full border-collapse">
           <thead className={cn(stickyHeader && 'sticky top-0 z-10')}>
             <tr className="border-b border-border-subtle bg-surface">
@@ -211,7 +211,7 @@ export function Table<T>({
             </tr>
           </thead>
           <tbody>
-            {paged.map((row) => {
+            {paged.map((row, rowIndex) => {
               const key = rowKey(row);
               const isSel = selected.has(key);
               return (
@@ -219,7 +219,11 @@ export function Table<T>({
                   key={key}
                   className={cn(
                     'border-b border-border-subtle transition-colors',
-                    isSel ? 'bg-accent-50/50 dark:bg-accent-100/20' : 'hover:bg-surface',
+                    isSel
+                      ? 'bg-accent-50/60 dark:bg-accent-100/20'
+                      : rowIndex % 2 === 1
+                        ? 'bg-surface/40 hover:bg-surface-2/70'
+                        : 'hover:bg-surface-2/70',
                   )}
                 >
                   {selectable && (

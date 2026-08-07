@@ -12,7 +12,7 @@ export interface ChartData {
 export interface BarChartProps {
   data: { label: string; value: number }[];
   height?: number;
-  tone?: 'accent' | 'success' | 'warning' | 'danger' | 'info';
+  tone?: 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'blue' | 'cyan' | 'teal' | 'orange' | 'purple' | 'emerald' | 'indigo';
   className?: string;
 }
 
@@ -22,18 +22,33 @@ const toneFill: Record<string, string> = {
   warning: 'rgb(var(--warning-500))',
   danger: 'rgb(var(--danger-500))',
   info: 'rgb(var(--info-500))',
+  blue: 'rgb(var(--blue-500))',
+  cyan: 'rgb(var(--cyan-500))',
+  teal: 'rgb(var(--teal-500))',
+  orange: 'rgb(var(--orange-500))',
+  purple: 'rgb(var(--purple-500))',
+  emerald: 'rgb(var(--emerald-500))',
+  indigo: 'rgb(var(--indigo-500))',
 };
 
 export function BarChart({ data, height = 200, tone = 'accent', className }: BarChartProps) {
+  const gradId = useId();
   const max = Math.max(...data.map((d) => d.value), 1);
   const barWidth = 100 / data.length;
+  const col = toneFill[tone];
   return (
     <div className={cn('w-full', className)}>
       <svg role="img" aria-label={`Bar chart showing ${data.map(d => `${d.label}: ${d.value}`).join(', ')}`} viewBox={`0 0 100 ${height / 2}`} preserveAspectRatio="none" className="w-full" style={{ height }}>
+        <defs>
+          <linearGradient id={`${gradId}-bar`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={col} stopOpacity="0.95" />
+            <stop offset="100%" stopColor={col} stopOpacity="0.55" />
+          </linearGradient>
+        </defs>
         {data.map((d, i) => {
           const h = (d.value / max) * (height / 2 - 16);
-          const x = i * barWidth + barWidth * 0.2;
-          const w = barWidth * 0.6;
+          const x = i * barWidth + barWidth * 0.15;
+          const w = barWidth * 0.7;
           return (
             <rect
               key={i}
@@ -41,12 +56,12 @@ export function BarChart({ data, height = 200, tone = 'accent', className }: Bar
               y={height / 2 - h - 12}
               width={w}
               height={Math.max(0, h)}
-              fill={toneFill[tone]}
+              fill={`url(#${gradId}-bar)`}
               rx={0.5}
-              opacity={0.9}
+              opacity={0.95}
             >
-              <animate attributeName="height" from="0" to={Math.max(0, h)} dur="0.5s" fill="freeze" />
-              <animate attributeName="y" from={height / 2 - 12} to={height / 2 - h - 12} dur="0.5s" fill="freeze" />
+              <animate attributeName="height" from="0" to={Math.max(0, h)} dur="0.6s" fill="freeze" />
+              <animate attributeName="y" from={height / 2 - 12} to={height / 2 - h - 12} dur="0.6s" fill="freeze" />
             </rect>
           );
         })}
@@ -65,7 +80,7 @@ export function BarChart({ data, height = 200, tone = 'accent', className }: Bar
 export interface LineChartProps {
   data: { label: string; value: number }[];
   height?: number;
-  tone?: 'accent' | 'success' | 'warning' | 'danger' | 'info';
+  tone?: 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'blue' | 'cyan' | 'teal' | 'orange' | 'purple' | 'emerald' | 'indigo';
   className?: string;
 }
 
@@ -123,7 +138,7 @@ export function AreaChart(props: AreaChartProps) {
 }
 
 export interface PieChartProps {
-  data: { label: string; value: number; tone?: 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'neutral' }[];
+  data: { label: string; value: number; tone?: 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'blue' | 'cyan' | 'teal' | 'orange' | 'purple' | 'emerald' | 'indigo' }[];
   size?: number;
   className?: string;
 }
@@ -135,6 +150,13 @@ const pieColors: Record<string, string> = {
   danger: 'rgb(var(--danger-500))',
   info: 'rgb(var(--info-500))',
   neutral: 'rgb(var(--border-strong))',
+  blue: 'rgb(var(--blue-500))',
+  cyan: 'rgb(var(--cyan-500))',
+  teal: 'rgb(var(--teal-500))',
+  orange: 'rgb(var(--orange-500))',
+  purple: 'rgb(var(--purple-500))',
+  emerald: 'rgb(var(--emerald-500))',
+  indigo: 'rgb(var(--indigo-500))',
 };
 
 export function PieChart({ data, size = 160, className }: PieChartProps) {
@@ -168,12 +190,12 @@ export function PieChart({ data, size = 160, className }: PieChartProps) {
           <path key={i} d={s.path} fill={s.color} opacity={0.9} stroke="rgb(var(--bg-elevated))" strokeWidth={0.5} />
         ))}
       </svg>
-      <div className="flex flex-col gap-2 min-w-0">
+      <div className="flex flex-col gap-2.5 min-w-0">
         {segments.map((s, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ backgroundColor: s.color }} />
+          <div key={i} className="flex items-center gap-2.5">
+            <span className="h-2.5 w-2.5 rounded-full shrink-0 shadow-[0_0_0_3px_rgb(0_0_0/0.04)]" style={{ backgroundColor: s.color }} />
             <span className="text-caption text-text-secondary truncate">{s.label}</span>
-            <span className="text-caption font-medium text-text-tertiary ml-auto">{s.pct}%</span>
+            <span className="text-caption font-semibold text-text-primary ml-auto">{s.pct}%</span>
           </div>
         ))}
       </div>

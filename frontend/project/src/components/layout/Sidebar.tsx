@@ -286,14 +286,17 @@ function NavLink({
           onClick={() => !collapsed && setExpandedSections(item.id, !isExpanded)}
           title={collapsed ? item.label : undefined}
           className={cn(
-            'group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-body font-medium transition-all duration-150 ease-cx',
+            'group relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-body font-medium transition-all duration-150 ease-cx',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
             isActive
-              ? 'bg-accent-50 text-accent-700 dark:bg-accent-100 dark:text-accent-200'
+              ? 'bg-gradient-to-r from-accent-50 to-accent-50/40 text-accent-700 dark:from-accent-200/15 dark:to-transparent dark:text-accent-300'
               : 'text-text-secondary hover:bg-surface-2 hover:text-text-primary',
             collapsed && 'justify-center',
           )}
         >
+          {isActive && !collapsed && (
+            <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-gradient-to-b from-accent-400 to-accent-600" />
+          )}
           <span className={cn('shrink-0 [&>svg]:h-[18px] [&>svg]:w-[18px]', isActive && 'text-accent-600 dark:text-accent-300')}>
             {item.icon}
           </span>
@@ -324,7 +327,7 @@ function NavLink({
                     'flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-body transition-all duration-150 ease-cx',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
                     childActive
-                      ? 'bg-accent-50 text-accent-700 dark:bg-accent-100 dark:text-accent-200 font-medium'
+                      ? 'bg-accent-50 text-accent-700 dark:bg-accent-200/15 dark:text-accent-300 font-medium'
                       : 'text-text-tertiary hover:bg-surface-2 hover:text-text-primary',
                   )}
                 >
@@ -345,14 +348,17 @@ function NavLink({
       onClick={() => onNavigate(item.id)}
       title={collapsed ? item.label : undefined}
       className={cn(
-        'group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-body font-medium transition-all duration-150 ease-cx',
+        'group relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-body font-medium transition-all duration-150 ease-cx',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
         isActive
-          ? 'bg-accent-50 text-accent-700 dark:bg-accent-100 dark:text-accent-200'
+          ? 'bg-gradient-to-r from-accent-50 to-accent-50/40 text-accent-700 dark:from-accent-200/15 dark:to-transparent dark:text-accent-300'
           : 'text-text-secondary hover:bg-surface-2 hover:text-text-primary',
         collapsed && 'justify-center',
       )}
     >
+      {isActive && !collapsed && (
+        <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-gradient-to-b from-accent-400 to-accent-600" />
+      )}
       <span className={cn('shrink-0 [&>svg]:h-[18px] [&>svg]:w-[18px]', isActive && 'text-accent-600 dark:text-accent-300')}>
         {item.icon}
       </span>
@@ -407,7 +413,7 @@ function SidebarContent({
       {visibleSections.map((section, si) => (
         <div key={si} className="px-3">
           {!collapsed && section.title && (
-            <p className="px-2 py-2 text-2xs font-semibold uppercase tracking-wider text-text-tertiary">
+            <p className="px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
               {section.title}
             </p>
           )}

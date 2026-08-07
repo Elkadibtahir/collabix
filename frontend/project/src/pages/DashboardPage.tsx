@@ -37,6 +37,7 @@ import { Progress } from '../components/ui/Progress';
 import { Table, type TableColumn } from '../components/ui/Table';
 import { Tooltip } from '../components/ui/Tooltip';
 import { IconButton } from '../components/ui/IconButton';
+import { AnimatedCounter } from '../components/ui/AnimatedCounter';
 import { useToast } from '../components/ui/Toast';
 import { cn } from '../lib/cn';
 
@@ -95,6 +96,15 @@ const statToneBg: Record<string, string> = {
   neutral: 'bg-surface-2 text-text-secondary',
 };
 
+const statToneMap: Record<string, 'accent' | 'blue' | 'green' | 'teal' | 'purple' | 'orange' | 'amber' | 'cyan' | 'indigo' | 'emerald' | 'rose' | 'success' | 'warning' | 'danger' | 'info'> = {
+  accent: 'purple',
+  success: 'green',
+  warning: 'amber',
+  danger: 'rose',
+  info: 'cyan',
+  neutral: 'indigo',
+}
+
 function formatDate(instant: string | undefined): string {
   if (!instant) return '—';
   try {
@@ -139,15 +149,17 @@ function WelcomeHeader({ dashboard, onNewProject }: { dashboard: PersonalDashboa
   );
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
+function StatCard({ icon, label, value, tone = 'accent' }: { icon: React.ReactNode; label: string; value: number | string; tone?: keyof typeof statToneMap }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border-subtle bg-surface p-4">
-      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 text-text-secondary [&>svg]:h-[18px] [&>svg]:w-[18px]">
+    <div className="cx-card cx-card-hover flex items-center gap-3.5 p-4 animate-pop">
+      <span className={cn('flex h-11 w-11 shrink-0 items-center justify-center rounded-xl [&>svg]:h-5 [&>svg]:w-5', statToneBg[tone])}>
         {icon}
       </span>
-      <div>
-        <p className="text-2xs text-text-tertiary">{label}</p>
-        <p className="text-body font-bold text-text-primary">{value}</p>
+      <div className="min-w-0">
+        <p className="truncate text-2xs font-medium uppercase tracking-wide text-text-tertiary">{label}</p>
+        <p className="mt-0.5 text-xl font-bold tracking-tight text-text-primary">
+          {typeof value === 'number' ? <AnimatedCounter value={value} /> : value}
+        </p>
       </div>
     </div>
   );
@@ -174,7 +186,7 @@ function StatisticsOverview({ dashboard }: { dashboard: PersonalDashboardRespons
     <div>
       <SectionHeader title="Statistics Overview" description="Your work at a glance" />
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        {stats.map((s) => <StatCard key={s.id} icon={s.icon} label={s.label} value={s.value} />)}
+        {stats.map((s, i) => <div key={s.id} className={cn('animate-stagger-' + ((i % 6) + 1))}><StatCard icon={s.icon} label={s.label} value={s.value} tone={s.tone} /></div>)}
       </div>
     </div>
   );

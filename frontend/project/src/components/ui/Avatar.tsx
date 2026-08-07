@@ -10,12 +10,12 @@ const sizeClasses: Record<Size, string> = {
 };
 
 const toneClasses = [
-  'bg-accent-100 text-accent-700 dark:bg-accent-100 dark:text-accent-200',
-  'bg-success-100 text-success-700 dark:bg-success-100 dark:text-success-700',
-  'bg-warning-100 text-warning-700 dark:bg-warning-100 dark:text-warning-700',
-  'bg-danger-100 text-danger-700 dark:bg-danger-100 dark:text-danger-700',
-  'bg-info-100 text-info-700 dark:bg-info-100 dark:text-info-700',
-  'bg-surface-2 text-text-secondary',
+  'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-500',
+  'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-500',
+  'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-500',
+  'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-500',
+  'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-600',
+  'bg-surface-2 text-text-secondary dark:bg-surface-2 dark:text-text-secondary',
 ];
 
 function hashIndex(name: string, len: number) {

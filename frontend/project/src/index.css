@@ -7,7 +7,7 @@
 @layer base {
   :root {
     /* Surfaces — light */
-    --bg-canvas: 255 255 255;
+    --bg-canvas: 250 251 252;
     --bg-surface: 248 250 252;
     --bg-surface-2: 241 245 249;
     --bg-elevated: 255 255 255;
@@ -23,110 +23,201 @@
     --border-default: 203 213 225;
     --border-strong: 148 163 184;
 
-    /* Accent — indigo */
-    --accent-50: 238 242 255;
-    --accent-100: 224 231 255;
-    --accent-200: 199 210 254;
-    --accent-300: 165 180 252;
-    --accent-400: 129 140 248;
-    --accent-500: 99 102 241;
-    --accent-600: 79 70 229;
-    --accent-700: 67 56 202;
-    --accent-800: 55 48 181;
-    --accent-900: 30 27 75;
+    /* Accent — violet/purple */
+    --accent-50: 250 245 255;
+    --accent-100: 243 232 255;
+    --accent-200: 233 213 255;
+    --accent-300: 216 180 254;
+    --accent-400: 192 132 252;
+    --accent-500: 168 85 247;
+    --accent-600: 147 51 234;
+    --accent-700: 126 34 206;
+    --accent-800: 107 33 168;
+    --accent-900: 88 28 135;
 
-    /* Status */
-    --success-50: 237 252 242;
-    --success-100: 209 250 229;
+    /* Status — full scales for variety */
+    --success-50: 240 253 244;
+    --success-100: 220 252 231;
+    --success-200: 187 247 208;
     --success-500: 34 197 94;
-    --success-700: 22 163 74;
+    --success-700: 21 128 61;
 
     --warning-50: 255 251 235;
     --warning-100: 254 243 199;
+    --warning-200: 253 230 138;
     --warning-500: 245 158 11;
-    --warning-700: 180 120 20;
+    --warning-700: 180 83 9;
 
     --danger-50: 254 242 242;
     --danger-100: 254 226 226;
+    --danger-200: 254 202 202;
     --danger-500: 239 68 68;
     --danger-700: 185 28 28;
 
-    --info-50: 238 242 255;
-    --info-100: 224 231 255;
-    --info-500: 99 102 241;
-    --info-700: 67 56 202;
+    --info-50: 239 246 255;
+    --info-100: 219 234 254;
+    --info-200: 191 219 254;
+    --info-500: 59 130 246;
+    --info-700: 29 78 216;
 
-    /* Shadows */
-    --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
-    --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.06);
-    --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.07), 0 2px 4px -2px rgb(15 23 42 / 0.07);
-    --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.08);
-    --shadow-xl: 0 20px 25px -5px rgb(15 23 42 / 0.1), 0 8px 10px -6px rgb(15 23 42 / 0.08);
+    /* Extended tints used by stat cards / charts (independent of accents above) */
+    --blue-50: 239 246 255;
+    --blue-100: 219 234 254;
+    --blue-200: 191 219 254;
+    --blue-500: 59 130 246;
+    --blue-700: 29 78 216;
+    --teal-50: 240 253 250;
+    --teal-100: 204 251 241;
+    --teal-500: 20 184 166;
+    --teal-700: 15 118 110;
+    --purple-50: 250 245 255;
+    --purple-100: 243 232 255;
+    --purple-500: 168 85 247;
+    --purple-700: 126 34 206;
+    --orange-50: 255 247 237;
+    --orange-100: 255 237 213;
+    --orange-500: 249 115 22;
+    --orange-700: 194 65 12;
+    --amber-50: 255 251 235;
+    --amber-100: 254 243 199;
+    --amber-500: 245 158 11;
+    --amber-700: 180 83 9;
+    --cyan-50: 236 254 255;
+    --cyan-100: 207 250 254;
+    --cyan-500: 6 182 212;
+    --cyan-700: 14 116 144;
+    --indigo-50: 238 242 255;
+    --indigo-100: 224 231 255;
+    --indigo-500: 99 102 241;
+    --indigo-700: 67 56 202;
+    --emerald-50: 236 253 245;
+    --emerald-100: 209 250 229;
+    --emerald-500: 16 185 129;
+    --emerald-700: 4 120 87;
+    --rose-50: 255 241 242;
+    --rose-100: 255 228 230;
+    --rose-500: 244 63 94;
+    --rose-700: 190 18 60;
+
+    /* Shadows — layered, premium */
+    --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+    --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.03), 0 1px 3px 0 rgb(15 23 42 / 0.05);
+    --shadow-md: 0 2px 4px -1px rgb(15 23 42 / 0.05), 0 6px 12px -4px rgb(15 23 42 / 0.08);
+    --shadow-lg: 0 8px 16px -6px rgb(15 23 42 / 0.08), 0 16px 24px -8px rgb(15 23 42 / 0.1);
+    --shadow-xl: 0 12px 24px -8px rgb(15 23 42 / 0.1), 0 28px 48px -12px rgb(15 23 42 / 0.16);
+    --shadow-card: 0 0 0 1px rgb(15 23 42 / 0.02), 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 6px 16px -6px rgb(15 23 42 / 0.08);
+    --shadow-card-hover: 0 0 0 1px rgb(15 23 42 / 0.03), 0 4px 8px -2px rgb(99 102 241 / 0.08), 0 12px 28px -8px rgb(15 23 42 / 0.14);
+    --shadow-glow-accent: 0 0 0 1px rgb(168 85 247 / 0.1), 0 8px 24px -6px rgb(168 85 247 / 0.25);
 
     --sidebar-bg: 255 255 255;
     --topbar-bg: 255 255 255;
   }
 
   .dark {
-    /* Surfaces — neutral dark theme */
-    --bg-canvas: 15 17 21;
-    --bg-surface: 22 26 34;
-    --bg-surface-2: 35 42 54;
-    --bg-elevated: 29 34 43;
+    /* Surfaces — elegant gray, not pure black */
+    --bg-canvas: 12 14 18;
+    --bg-surface: 20 23 29;
+    --bg-surface-2: 30 34 42;
+    --bg-elevated: 25 28 35;
 
     /* Text — improved contrast */
     --text-primary: 243 244 246;
-    --text-secondary: 166 173 187;
-    --text-tertiary: 139 146 160;
-    --text-inverse: 15 17 21;
+    --text-secondary: 168 176 188;
+    --text-tertiary: 141 148 160;
+    --text-inverse: 17 19 24;
 
     /* Borders — neutral */
-    --border-subtle: 46 52 66;
-    --border-default: 58 65 80;
+    --border-subtle: 42 46 55;
+    --border-default: 55 60 72;
     --border-strong: 80 88 104;
 
-    /* Accent — indigo (inverted for dark) */
-    --accent-50: 30 27 75;
-    --accent-100: 49 46 129;
-    --accent-200: 67 56 202;
-    --accent-300: 79 70 229;
-    --accent-400: 99 102 241;
-    --accent-500: 129 140 248;
-    --accent-600: 165 180 252;
-    --accent-700: 199 210 254;
-    --accent-800: 224 231 255;
-    --accent-900: 238 242 255;
+    /* Accent — purple (softened for dark bg) */
+    --accent-50: 37 28 48;
+    --accent-100: 52 38 66;
+    --accent-200: 82 56 106;
+    --accent-300: 126 83 160;
+    --accent-400: 156 112 196;
+    --accent-500: 168 135 214;
+    --accent-600: 190 155 235;
+    --accent-700: 214 190 244;
+    --accent-800: 231 215 250;
+    --accent-900: 241 232 252;
 
     /* Status — dark adjusted */
-    --success-50: 20 35 28;
-    --success-100: 22 45 35;
+    --success-50: 18 32 26;
+    --success-100: 22 42 33;
+    --success-200: 28 59 45;
     --success-500: 34 197 94;
     --success-700: 74 222 128;
 
-    --warning-50: 40 35 20;
-    --warning-100: 50 42 22;
+    --warning-50: 42 35 20;
+    --warning-100: 51 42 22;
+    --warning-200: 68 55 28;
     --warning-500: 245 158 11;
     --warning-700: 251 191 36;
 
-    --danger-50: 45 25 25;
-    --danger-100: 55 30 30;
-    --danger-500: 239 68 68;
-    --danger-700: 248 113 113;
+    --danger-50: 45 25 26;
+    --danger-100: 57 31 33;
+    --danger-200: 76 38 41;
+    --danger-500: 244 63 94;
+    --danger-700: 251 113 133;
 
-    --info-50: 30 27 75;
-    --info-100: 49 46 129;
-    --info-500: 129 140 248;
-    --info-700: 165 180 252;
+    --info-50: 24 34 52;
+    --info-100: 30 44 68;
+    --info-200: 38 56 88;
+    --info-500: 96 165 250;
+    --info-700: 147 197 253;
 
-    /* Shadows — softer */
-    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.12);
-    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.16), 0 1px 2px -1px rgb(0 0 0 / 0.16);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.2), 0 2px 4px -2px rgb(0 0 0 / 0.2);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.25), 0 4px 6px -4px rgb(0 0 0 / 0.25);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.25);
+    /* Extended palettes — dark */
+    --blue-50: 24 34 52;
+    --blue-100: 30 44 68;
+    --blue-600: 96 165 250;
+    --blue-700: 147 197 253;
+    --teal-50: 18 33 36;
+    --teal-100: 22 43 45;
+    --teal-500: 45 212 191;
+    --teal-700: 94 234 212;
+    --purple-50: 37 28 48;
+    --purple-100: 52 38 66;
+    --purple-500: 192 132 252;
+    --purple-700: 216 180 254;
+    --orange-50: 42 32 22;
+    --orange-100: 51 38 26;
+    --orange-500: 251 146 60;
+    --orange-700: 253 186 116;
+    --amber-50: 40 35 20;
+    --amber-100: 51 42 22;
+    --amber-500: 245 158 11;
+    --amber-700: 251 191 36;
+    --cyan-50: 23 38 44;
+    --cyan-100: 27 47 54;
+    --cyan-500: 34 211 238;
+    --cyan-700: 103 232 249;
+    --indigo-50: 28 31 60;
+    --indigo-100: 36 39 76;
+    --indigo-500: 129 140 248;
+    --indigo-700: 165 180 252;
+    --emerald-50: 20 35 28;
+    --emerald-100: 22 45 35;
+    --emerald-500: 52 211 153;
+    --emerald-700: 110 231 183;
+    --rose-50: 45 27 30;
+    --rose-100: 58 33 38;
+    --rose-500: 251 113 133;
+    --rose-700: 253 164 175;
 
-    --sidebar-bg: 22 26 34;
-    --topbar-bg: 22 26 34;
+    /* Shadows — softer on dark */
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.16);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2), 0 1px 3px 0 rgb(0 0 0 / 0.18);
+    --shadow-md: 0 2px 4px -1px rgb(0 0 0 / 0.24), 0 6px 12px -4px rgb(0 0 0 / 0.24);
+    --shadow-lg: 0 8px 16px -6px rgb(0 0 0 / 0.28), 0 16px 24px -8px rgb(0 0 0 / 0.3);
+    --shadow-xl: 0 20px 24px -8px rgb(0 0 0 / 0.32), 0 28px 48px -12px rgb(0 0 0 / 0.4);
+    --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.02), 0 1px 2px 0 rgb(0 0 0 / 0.16), 0 6px 16px -6px rgb(0 0 0 / 0.24);
+    --shadow-card-hover: 0 0 0 1px rgb(168 135 214 / 0.08), 0 4px 8px -2px rgb(0 0 0 / 0.3), 0 12px 28px -8px rgb(0 0 0 / 0.38);
+    --shadow-glow-accent: 0 0 0 1px rgb(192 132 252 / 0.12), 0 8px 24px -6px rgb(168 85 247 / 0.2);
+
+    --sidebar-bg: 12 14 18;
+    --topbar-bg: 12 14 18;
   }
 
   * {
@@ -186,20 +277,30 @@
   .cx-card {
     background-color: rgb(var(--bg-elevated));
     border: 1px solid rgb(var(--border-subtle));
-    border-radius: 12px;
-    box-shadow: var(--shadow-sm);
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+
+  .cx-card-hover {
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .cx-card-hover:hover {
+    border-color: rgb(var(--border-default));
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-1px);
   }
 
   .cx-input {
     width: 100%;
     background-color: rgb(var(--bg-canvas));
     border: 1px solid rgb(var(--border-default));
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 8px 12px;
     font-size: 14px;
     line-height: 20px;
     color: rgb(var(--text-primary));
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   }
   .cx-input::placeholder {
     color: rgb(var(--text-tertiary));
@@ -220,16 +321,19 @@
 
 @layer utilities {
   .animate-fade-in {
-    animation: cx-fade-in 0.2s ease-out;
+    animation: cx-fade-in 0.3s ease-out;
+  }
+  .animate-fade-in-up {
+    animation: cx-fade-in-up 0.4s ease-out both;
   }
   .animate-slide-up {
-    animation: cx-slide-up 0.25s ease-out;
+    animation: cx-slide-up 0.3s ease-out;
   }
   .animate-slide-in-right {
-    animation: cx-slide-in-right 0.25s ease-out;
+    animation: cx-slide-in-right 0.3s ease-out;
   }
   .animate-scale-in {
-    animation: cx-scale-in 0.15s ease-out;
+    animation: cx-scale-in 0.2s ease-out;
   }
   .animate-accordion-down {
     animation: cx-accordion-down 0.2s ease-out;
@@ -237,11 +341,24 @@
   .animate-shimmer {
     animation: cx-shimmer 1.8s linear infinite;
   }
+  .animate-pop {
+    animation: cx-pop 0.25s ease-out;
+  }
+  .animate-stagger-1 { animation: cx-fade-in-up 0.4s ease-out both; animation-delay: 0.04s; }
+  .animate-stagger-2 { animation: cx-fade-in-up 0.4s ease-out both; animation-delay: 0.08s; }
+  .animate-stagger-3 { animation: cx-fade-in-up 0.4s ease-out both; animation-delay: 0.12s; }
+  .animate-stagger-4 { animation: cx-fade-in-up 0.4s ease-out both; animation-delay: 0.16s; }
+  .animate-stagger-5 { animation: cx-fade-in-up 0.4s ease-out both; animation-delay: 0.2s; }
+  .animate-stagger-6 { animation: cx-fade-in-up 0.4s ease-out both; animation-delay: 0.24s; }
 }
 
 @keyframes cx-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+@keyframes cx-fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 @keyframes cx-slide-up {
   from { opacity: 0; transform: translateY(8px); }
@@ -262,4 +379,9 @@
 @keyframes cx-shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
+}
+@keyframes cx-pop {
+  0% { transform: scale(0.92); opacity: 0.4; }
+  60% { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
 }

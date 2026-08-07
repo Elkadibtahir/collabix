@@ -14,17 +14,17 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 const toneSoft: Record<Tone, string> = {
-  neutral: 'bg-surface-2 text-text-secondary',
-  accent: 'bg-accent-50 text-accent-700 dark:bg-accent-100 dark:text-accent-200',
-  success: 'bg-success-50 text-success-700 dark:bg-success-100 dark:text-success-700',
-  warning: 'bg-warning-50 text-warning-700 dark:bg-warning-100 dark:text-warning-700',
-  danger: 'bg-danger-50 text-danger-700 dark:bg-danger-100 dark:text-danger-700',
-  info: 'bg-info-50 text-info-700 dark:bg-info-100 dark:text-info-700',
+  neutral: 'bg-surface-2 text-text-secondary dark:bg-border-subtle/50 dark:text-text-secondary',
+  accent: 'bg-accent-50 text-accent-700 border border-accent-200/60 dark:bg-accent-100 dark:text-accent-200 dark:border-accent-200/20',
+  success: 'bg-success-50 text-success-700 border border-success-200/60 dark:bg-success-100 dark:text-success-700 dark:border-success-200/20',
+  warning: 'bg-warning-50 text-warning-700 border border-warning-200/60 dark:bg-warning-100 dark:text-warning-700 dark:border-warning-200/20',
+  danger: 'bg-danger-50 text-danger-700 border border-danger-200/60 dark:bg-danger-100 dark:text-danger-700 dark:border-danger-200/20',
+  info: 'bg-info-50 text-info-700 border border-info-200/60 dark:bg-info-100 dark:text-info-700 dark:border-info-200/20',
 };
 
 const toneSolid: Record<Tone, string> = {
   neutral: 'bg-border-default text-white',
-  accent: 'bg-accent-600 text-white',
+  accent: 'bg-gradient-to-b from-accent-500 to-accent-600 text-white',
   success: 'bg-success-500 text-white',
   warning: 'bg-warning-500 text-white',
   danger: 'bg-danger-500 text-white',
@@ -50,9 +50,9 @@ const dotColor: Record<Tone, string> = {
 };
 
 const sizeClasses: Record<BadgeSize, string> = {
-  xs: 'px-1.5 py-0.5 text-[10px]',
-  sm: 'px-2 py-0.5 text-2xs',
-  md: 'px-2.5 py-0.5 text-2xs',
+  xs: 'px-2 py-0.5 text-[10px]',
+  sm: 'px-2 py-1 text-2xs',
+  md: 'px-2.5 py-1 text-2xs',
 };
 
 export function Badge({ tone = 'neutral', variant = 'soft', size = 'md', dot, className, children, ...props }: BadgeProps) {
@@ -65,7 +65,8 @@ export function Badge({ tone = 'neutral', variant = 'soft', size = 'md', dot, cl
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-md text-2xs font-medium leading-[16px] whitespace-nowrap',
+        'inline-flex items-center gap-1.5 rounded-full text-2xs font-medium leading-[16px] whitespace-nowrap',
+        'shadow-[0_1px_2px_rgb(0_0_0/0.04)]',
         sizeClasses[size],
         toneClass,
         className,
